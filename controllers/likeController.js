@@ -3,24 +3,64 @@ const { Like } = require('../models');
 const likePost = async (req, res) => {
     const { post_id, user_id } = req.body;
     try {
+        const existingLike = await Like.findOne({ where: { post_id, user_id } });
+        if (existingLike) {
+            return res.status(409).json({
+                success: false,
+                message: "User already liked this post"
+            });
+        }
+
         const newLike = await Like.create({ post_id, user_id });
-        res.status(201).json(newLike);
+        res.status(201).json({
+            success: true,
+            message: "Post successfully liked",
+            data: {
+                id: newLike.id,
+                post_id: newLike.post_id,
+                user_id: newLike.user_id,
+                createdAt: newLike.createdAt
+            }
+        });
     } catch (error) {
-        res.status(500).json({ error: "Failed to like post" });
+        console.error(error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to like post",
+            error: error.message
+        });
     }
 };
+
+
+const { Like } = require('../models');
 
 const unlikePost = async (req, res) => {
     const { post_id, user_id } = req.body;
     try {
         const result = await Like.destroy({ where: { post_id, user_id } });
         if (result) {
-            res.status(200).json({ message: "Post unliked" });
+            res.status(200).json({
+                success: true,
+                message: "Post successfully unliked",
+                data: {
+                    post_id,
+                    user_id
+                }
+            });
         } else {
-            res.status(404).json({ error: "Like not found" });
+            res.status(404).json({
+                success: false,
+                message: "Like not found"
+            });
         }
     } catch (error) {
-        res.status(500).json({ error: "Failed to unlike post" });
+        console.error(error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to unlike post",
+            error: error.message
+        });
     }
 };
 

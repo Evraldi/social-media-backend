@@ -1,6 +1,5 @@
 const { Comment, Post, User } = require('../models');
 
-// Get comments for a post
 const getComments = async (req, res) => {
     const { post_id } = req.params;
     try {
@@ -14,7 +13,6 @@ const getComments = async (req, res) => {
     }
 };
 
-// Create a new comment
 const createComment = async (req, res) => {
     const { post_id, user_id, content } = req.body;
     try {
@@ -25,7 +23,6 @@ const createComment = async (req, res) => {
     }
 };
 
-// Delete a comment
 const deleteComment = async (req, res) => {
     const { id } = req.params;
     try {

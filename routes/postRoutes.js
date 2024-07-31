@@ -1,9 +1,12 @@
 const express = require('express');
-const { getPosts, createPost, deletePost } = require('../controllers/postController');
+const multer = require('multer');
+const { createPost, getPosts, deletePost } = require('../controllers/postController');
 const router = express.Router();
 
+const upload = multer({ dest: 'uploads/' });
+
 router.get('/', getPosts);
-router.post('/', createPost);
+router.post('/', upload.single('image'), createPost);
 router.delete('/:id', deletePost);
 
 module.exports = router;

@@ -1,4 +1,5 @@
 const express = require('express');
+const multer = require('multer');
 const { initDb } = require('./models');
 const userRoutes = require('./routes/userRoutes');
 const postRoutes = require('./routes/postRoutes');
@@ -8,7 +9,10 @@ const likeRoutes = require('./routes/likeRoutes');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+const upload = multer({ dest: 'uploads/' });
+
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 app.use('/api/users', userRoutes);
 app.use('/api/posts', postRoutes);

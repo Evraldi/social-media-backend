@@ -4,7 +4,6 @@ const Post = require('./post');
 const Comment = require('./comment');
 const Like = require('./like');
 
-// Relasi antar model
 User.hasMany(Post, { foreignKey: 'user_id' });
 Post.belongsTo(User, { foreignKey: 'user_id' });
 

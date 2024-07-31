@@ -2,7 +2,6 @@ const { User } = require('../models');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
-// Get all users
 const getUsers = async (req, res) => {
     try {
         const users = await User.findAll();
@@ -12,7 +11,6 @@ const getUsers = async (req, res) => {
     }
 };
 
-// Create a new user (Register)
 const createUser = async (req, res) => {
     const { username, email, password } = req.body;
     try {
@@ -24,7 +22,6 @@ const createUser = async (req, res) => {
     }
 };
 
-// User login
 const loginUser = async (req, res) => {
     const { email, password } = req.body;
     try {

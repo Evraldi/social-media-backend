@@ -10,13 +10,11 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 
-// Routes
 app.use('/api/users', userRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/comments', commentRoutes);
 app.use('/api/likes', likeRoutes);
 
-// Start server
 const startServer = async () => {
     await initDb();
     app.listen(PORT, () => {

@@ -32,9 +32,6 @@ const likePost = async (req, res) => {
     }
 };
 
-
-const { Like } = require('../models');
-
 const unlikePost = async (req, res) => {
     const { post_id, user_id } = req.body;
     try {

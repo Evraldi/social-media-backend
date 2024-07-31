@@ -1,15 +1,20 @@
 const { Post, User } = require('../models');
+const path = require('path');
+const fs = require('fs');
 
 const getPosts = async (req, res) => {
     try {
-        const posts = await Post.findAll({ include: User });
+        const posts = await Post.findAll({
+            include: User,
+            order: [['created_at', 'DESC']]
+        });
         res.status(200).json({
             success: true,
             message: `Successfully retrieved ${posts.length} post(s)`,
             data: posts
         });
     } catch (error) {
-        console.error(error);
+        console.error('Error retrieving posts:', error);
         res.status(500).json({
             success: false,
             message: "Failed to retrieve posts",
@@ -19,7 +24,9 @@ const getPosts = async (req, res) => {
 };
 
 const createPost = async (req, res) => {
-    const { user_id, content, image_url } = req.body;
+    const { user_id, content } = req.body;
+    const file = req.file;
+
     try {
         const user = await User.findByPk(user_id);
         if (!user) {
@@ -27,6 +34,11 @@ const createPost = async (req, res) => {
                 success: false,
                 message: "User not found"
             });
+        }
+
+        let image_url = null;
+        if (file) {
+            image_url = file.path;
         }
 
         const newPost = await Post.create({ user_id, content, image_url });
@@ -42,7 +54,7 @@ const createPost = async (req, res) => {
             }
         });
     } catch (error) {
-        console.error(error);
+        console.error('Error creating post:', error);
         res.status(500).json({
             success: false,
             message: "Failed to create post",
@@ -51,41 +63,36 @@ const createPost = async (req, res) => {
     }
 };
 
-
-const deletePost = async (req, res) => {
+const updatePost = async (req, res) => {
     const { id } = req.params;
+    const { content } = req.body;
+    const file = req.file;
+
     try {
-        const result = await Post.destroy({ where: { id } });
-        if (result) {
-            res.status(200).json({
-                success: true,
-                message: "Post successfully deleted",
-                data: { id }
-            });
-        } else {
-            res.status(404).json({
+        const post = await Post.findByPk(id);
+        if (!post) {
+            return res.status(404).json({
                 success: false,
                 message: "Post not found"
             });
         }
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({
-            success: false,
-            message: "Failed to delete post",
-            error: error.message
-        });
-    }
-};
 
-const updatePost = async (req, res) => {
-    const { id } = req.params;
-    const { content, image_url } = req.body;
-    try {
+        let image_url = post.image_url;
+        if (file) {
+            if (image_url) {
+                const oldImagePath = path.resolve(__dirname, '../', image_url);
+                if (fs.existsSync(oldImagePath)) {
+                    fs.unlinkSync(oldImagePath);
+                }
+            }
+            image_url = file.path;
+        }
+
         const [updated] = await Post.update(
             { content, image_url },
             { where: { id } }
         );
+
         if (updated) {
             const updatedPost = await Post.findByPk(id);
             res.status(200).json({
@@ -100,10 +107,44 @@ const updatePost = async (req, res) => {
             });
         }
     } catch (error) {
-        console.error(error);
+        console.error('Error updating post:', error);
         res.status(500).json({
             success: false,
             message: "Failed to update post",
+            error: error.message
+        });
+    }
+};
+
+const deletePost = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const post = await Post.findByPk(id);
+        if (!post) {
+            return res.status(404).json({
+                success: false,
+                message: "Post not found"
+            });
+        }
+
+        if (post.image_url) {
+            const imagePath = path.resolve(__dirname, '../', post.image_url);
+            if (fs.existsSync(imagePath)) {
+                fs.unlinkSync(imagePath);
+            }
+        }
+
+        await Post.destroy({ where: { id } });
+        res.status(200).json({
+            success: true,
+            message: "Post successfully deleted",
+            data: { id }
+        });
+    } catch (error) {
+        console.error('Error deleting post:', error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to delete post",
             error: error.message
         });
     }

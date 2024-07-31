@@ -3,7 +3,7 @@ const multer = require('multer');
 const { createPost, getPosts, deletePost, updatePost } = require('../controllers/postController');
 const router = express.Router();
 
-const upload = multer({ dest: 'uploads/' });
+const upload = multer({ dest: 'uploads/posts' });
 
 router.get('/', getPosts);
 router.post('/', upload.single('image'), createPost);

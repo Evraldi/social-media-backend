@@ -1,6 +1,5 @@
 const { Post, User } = require('../models');
 
-// Get all posts
 const getPosts = async (req, res) => {
     try {
         const posts = await Post.findAll({ include: User });
@@ -10,7 +9,6 @@ const getPosts = async (req, res) => {
     }
 };
 
-// Create a new post
 const createPost = async (req, res) => {
     const { user_id, content, image_url } = req.body;
     try {
@@ -21,7 +19,6 @@ const createPost = async (req, res) => {
     }
 };
 
-// Delete a post
 const deletePost = async (req, res) => {
     const { id } = req.params;
     try {

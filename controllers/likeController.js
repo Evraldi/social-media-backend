@@ -1,6 +1,5 @@
 const { Like } = require('../models');
 
-// Like a post
 const likePost = async (req, res) => {
     const { post_id, user_id } = req.body;
     try {
@@ -11,7 +10,6 @@ const likePost = async (req, res) => {
     }
 };
 
-// Unlike a post
 const unlikePost = async (req, res) => {
     const { post_id, user_id } = req.body;
     try {

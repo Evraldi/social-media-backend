@@ -78,4 +78,35 @@ const deletePost = async (req, res) => {
     }
 };
 
-module.exports = { getPosts, createPost, deletePost };
+const updatePost = async (req, res) => {
+    const { id } = req.params;
+    const { content, image_url } = req.body;
+    try {
+        const [updated] = await Post.update(
+            { content, image_url },
+            { where: { id } }
+        );
+        if (updated) {
+            const updatedPost = await Post.findByPk(id);
+            res.status(200).json({
+                success: true,
+                message: "Post successfully updated",
+                data: updatedPost
+            });
+        } else {
+            res.status(404).json({
+                success: false,
+                message: "Post not found"
+            });
+        }
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to update post",
+            error: error.message
+        });
+    }
+};
+
+module.exports = { getPosts, createPost, deletePost, updatePost };

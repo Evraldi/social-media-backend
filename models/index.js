@@ -8,6 +8,7 @@ const Message = require('./message');
 const Follower = require('./follower');
 const Media = require('./media');
 const Notification = require('./notification');
+const RefreshToken = require('./RefreshToken');
 
 // User Relationships
 User.hasMany(Post, { foreignKey: 'user_id' });
@@ -54,4 +55,4 @@ const initDb = async () => {
     }
 };
 
-module.exports = { sequelize, User, Post, Comment, Like, Friendship, Message, Follower, Media, Notification, initDb };
+module.exports = { sequelize, User, Post, Comment, Like, Friendship, Message, Follower, Media, Notification, RefreshToken, initDb };

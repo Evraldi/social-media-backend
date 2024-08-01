@@ -140,15 +140,25 @@ const refreshToken = async (req, res) => {
     }
 };
 
+
 const logoutUser = async (req, res) => {
     try {
-        const token = req.headers.authorization.split(' ')[1];
-        await RefreshToken.destroy({ where: { token } });
+        const { refreshToken } = req.body;
+        console.log('Refresh Token Received:', refreshToken);
 
-        res.status(200).json({
-            success: true,
-            message: "Logout successful"
-        });
+        if (refreshToken) {
+            await RefreshToken.destroy({ where: { token: refreshToken } });
+
+            res.status(200).json({
+                success: true,
+                message: "Logout successful"
+            });
+        } else {
+            res.status(400).json({
+                success: false,
+                message: "Refresh token missing or invalid"
+            });
+        }
     } catch (error) {
         console.error('Error during logout:', error);
         res.status(500).json({
@@ -158,5 +168,9 @@ const logoutUser = async (req, res) => {
         });
     }
 };
+
+
+
+
 
 module.exports = { getUsers, createUser, loginUser, refreshToken, logoutUser };

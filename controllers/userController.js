@@ -1,6 +1,27 @@
-const { User } = require('../models');
+const { User, RefreshToken } = require('../models');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const fs = require('fs');
+const path = require('path');
+require('dotenv').config();
+
+const privateKeyPath = process.env.PRIVATE_KEY_PATH;
+const publicKeyPath = process.env.PUBLIC_KEY_PATH;
+
+const privateKey = fs.readFileSync(path.resolve(__dirname, '..', privateKeyPath), 'utf8');
+const publicKey = fs.readFileSync(path.resolve(__dirname, '..', publicKeyPath), 'utf8');
+
+if (!privateKey || !publicKey) {
+    throw new Error('Private key or public key is missing');
+}
+
+const verifyToken = (token) => {
+    try {
+        return jwt.verify(token, publicKey, { algorithms: ['RS256'] });
+    } catch (err) {
+        throw new Error('Invalid token');
+    }
+};
 
 const getUsers = async (req, res) => {
     try {
@@ -19,7 +40,6 @@ const getUsers = async (req, res) => {
         });
     }
 };
-
 
 const createUser = async (req, res) => {
     const { username, email, password } = req.body;
@@ -73,13 +93,15 @@ const loginUser = async (req, res) => {
             });
         }
 
-        const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+        const accessToken = jwt.sign({ id: user.id }, privateKey, { algorithm: 'RS256', expiresIn: '15m' });
+        const refreshToken = jwt.sign({ id: user.id }, privateKey, { algorithm: 'RS256', expiresIn: '7d' });
+
+        await RefreshToken.create({ token: refreshToken, userId: user.id });
+
         res.status(200).json({
             success: true,
             message: "Login successful",
-            data: {
-                token
-            }
+            data: { accessToken, refreshToken }
         });
     } catch (error) {
         console.error(error);
@@ -91,5 +113,50 @@ const loginUser = async (req, res) => {
     }
 };
 
+const refreshToken = async (req, res) => {
+    const { refreshToken: oldRefreshToken } = req.body;
+    try {
+        const decoded = verifyToken(oldRefreshToken);
+        const user = await User.findByPk(decoded.id);
 
-module.exports = { getUsers, createUser, loginUser };
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+
+        const newAccessToken = jwt.sign({ id: user.id }, privateKey, { algorithm: 'RS256', expiresIn: '15m' });
+        const newRefreshToken = jwt.sign({ id: user.id }, privateKey, { algorithm: 'RS256', expiresIn: '7d' });
+
+        await RefreshToken.destroy({ where: { token: oldRefreshToken } });
+        await RefreshToken.create({ token: newRefreshToken, userId: user.id });
+
+        res.status(200).json({
+            success: true,
+            message: "Token refreshed",
+            data: { accessToken: newAccessToken, refreshToken: newRefreshToken }
+        });
+    } catch (error) {
+        console.error('Error refreshing token:', error);
+        res.status(403).json({ success: false, message: "Invalid refresh token", error: error.message });
+    }
+};
+
+const logoutUser = async (req, res) => {
+    try {
+        const token = req.headers.authorization.split(' ')[1];
+        await RefreshToken.destroy({ where: { token } });
+
+        res.status(200).json({
+            success: true,
+            message: "Logout successful"
+        });
+    } catch (error) {
+        console.error('Error during logout:', error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to logout",
+            error: error.message
+        });
+    }
+};
+
+module.exports = { getUsers, createUser, loginUser, refreshToken, logoutUser };

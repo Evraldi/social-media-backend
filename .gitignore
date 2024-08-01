@@ -3,3 +3,6 @@ node_modules
 note.txt
 
 uploads/
+
+private.key
+public.key

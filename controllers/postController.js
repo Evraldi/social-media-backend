@@ -2,6 +2,69 @@ const { Post, User } = require('../models');
 const path = require('path');
 const fs = require('fs');
 
+
+const getPostsByUserId = async (req, res) => {
+    const { user_id } = req.params;
+
+    try {
+        const posts = await Post.findAll({
+            where: { user_id },
+            include: User,
+            order: [['created_at', 'DESC']],
+        });
+
+        if (!posts.length) {
+            return res.status(404).json({
+                success: false,
+                message: 'No posts found for this user',
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: `Successfully retrieved ${posts.length} post(s) for user ID ${user_id}`,
+            data: posts,
+        });
+    } catch (error) {
+        console.error('Error retrieving posts by user ID:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to retrieve posts',
+            error: error.message,
+        });
+    }
+};
+
+const getPostById = async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const post = await Post.findByPk(id, {
+            include: User,
+        });
+
+        if (!post) {
+            return res.status(404).json({
+                success: false,
+                message: 'Post not found',
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: `Successfully retrieved post with ID ${id}`,
+            data: post,
+        });
+    } catch (error) {
+        console.error('Error retrieving post by ID:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to retrieve post',
+            error: error.message,
+        });
+    }
+};
+
 const getPosts = async (req, res) => {
     try {
         const posts = await Post.findAll({
@@ -150,4 +213,4 @@ const deletePost = async (req, res) => {
     }
 };
 
-module.exports = { getPosts, createPost, deletePost, updatePost };
+module.exports = { getPosts, createPost, deletePost, updatePost, getPostsByUserId, getPostById };

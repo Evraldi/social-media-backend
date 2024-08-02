@@ -19,6 +19,11 @@ const Message = sequelize.define('Message', {
         type: DataTypes.TEXT,
         allowNull: false
     },
+    status: {
+        type: DataTypes.ENUM('sent', 'delivered', 'read'),
+        defaultValue: 'sent',
+        allowNull: false
+    },
     created_at: {
         type: DataTypes.DATE,
         defaultValue: DataTypes.NOW

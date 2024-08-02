@@ -1,4 +1,37 @@
-const { Like } = require('../models');
+const { Post, Like } = require('../models');
+
+const getLikesByPostId = async (req, res) => {
+    const { postId } = req.params;
+
+    try {
+        const post = await Post.findByPk(postId, {
+            include: {
+                model: Like,
+                attributes: ['user_id'],
+            },
+        });
+
+        if (!post) {
+            return res.status(404).json({
+                success: false,
+                message: 'Post not found',
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: `Successfully retrieved ${post.Likes.length} like(s) for post ID ${postId}`,
+            data: post.Likes,
+        });
+    } catch (error) {
+        console.error('Error retrieving likes:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to retrieve likes',
+            error: error.message,
+        });
+    }
+};
 
 const likePost = async (req, res) => {
     const { post_id, user_id } = req.body;
@@ -61,4 +94,4 @@ const unlikePost = async (req, res) => {
     }
 };
 
-module.exports = { likePost, unlikePost };
+module.exports = { likePost, unlikePost, getLikesByPostId };

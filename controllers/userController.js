@@ -1,27 +1,5 @@
-const { User, RefreshToken } = require('../models');
+const { User, UserProfile } = require('../models');
 const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
-const fs = require('fs');
-const path = require('path');
-require('dotenv').config();
-
-const privateKeyPath = process.env.PRIVATE_KEY_PATH;
-const publicKeyPath = process.env.PUBLIC_KEY_PATH;
-
-const privateKey = fs.readFileSync(path.resolve(__dirname, '..', privateKeyPath), 'utf8');
-const publicKey = fs.readFileSync(path.resolve(__dirname, '..', publicKeyPath), 'utf8');
-
-if (!privateKey || !publicKey) {
-    throw new Error('Private key or public key is missing');
-}
-
-const verifyToken = (token) => {
-    try {
-        return jwt.verify(token, publicKey, { algorithms: ['RS256'] });
-    } catch (err) {
-        throw new Error('Invalid token');
-    }
-};
 
 const getUsers = async (req, res) => {
     try {
@@ -29,14 +7,15 @@ const getUsers = async (req, res) => {
         res.status(200).json({
             success: true,
             message: `Successfully retrieved ${users.length} user(s)`,
-            data: users
+            data: users,
+            timestamp: new Date().toISOString()
         });
     } catch (error) {
-        console.error(error);
+        //console.error(error);
         res.status(500).json({
             success: false,
-            message: "Failed to retrieve users",
-            error: error.message
+            message: "An unexpected error occurred. Please try again later.",
+            timestamp: new Date().toISOString()
         });
     }
 };
@@ -48,16 +27,17 @@ const createUser = async (req, res) => {
         if (existingUser) {
             return res.status(409).json({
                 success: false,
-                message: "User with this email already exists"
+                message: "User with this email already exists",
+                timestamp: new Date().toISOString()
             });
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
         const newUser = await User.create({ username, email, password: hashedPassword });
-        
         res.status(201).json({
             success: true,
             message: "User successfully created",
+            timestamp: new Date().toISOString(),
             data: {
                 id: newUser.id,
                 username: newUser.username,
@@ -65,112 +45,135 @@ const createUser = async (req, res) => {
             }
         });
     } catch (error) {
-        console.error(error);
+        //console.error(error);
         res.status(500).json({
             success: false,
-            message: "Failed to create user",
-            error: error.message
+            message: "An unexpected error occurred. Please try again later.",
+            timestamp: new Date().toISOString()
         });
     }
 };
 
-const loginUser = async (req, res) => {
-    const { email, password } = req.body;
+const getUserProfiles = async (req, res) => {
     try {
-        const user = await User.findOne({ where: { email } });
-        if (!user) {
+        const profiles = await UserProfile.findAll();
+        res.status(200).json({
+            success: true,
+            message: `Successfully retrieved ${profiles.length} profile(s)`,
+            data: profiles,
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        //console.error(error);
+        res.status(500).json({
+            success: false,
+            message: "An unexpected error occurred. Please try again later.",
+            timestamp: new Date().toISOString()
+        });
+    }
+};
+
+const getUserProfileById = async (req, res) => {
+    const { user_id } = req.params;
+    try {
+        const profile = await UserProfile.findOne({ where: { user_id } });
+        if (!profile) {
             return res.status(404).json({
                 success: false,
-                message: "User not found"
+                message: "Profile not found",
+                timestamp: new Date().toISOString()
             });
         }
-
-        const isPasswordValid = await bcrypt.compare(password, user.password);
-        if (!isPasswordValid) {
-            return res.status(401).json({
-                success: false,
-                message: "Invalid credentials"
-            });
-        }
-
-        const accessToken = jwt.sign({ id: user.id }, privateKey, { algorithm: 'RS256', expiresIn: '15m' });
-        const refreshToken = jwt.sign({ id: user.id }, privateKey, { algorithm: 'RS256', expiresIn: '7d' });
-
-        await RefreshToken.create({ token: refreshToken, userId: user.id });
-
         res.status(200).json({
             success: true,
-            message: "Login successful",
-            data: { accessToken, refreshToken }
+            message: "Profile retrieved successfully",
+            data: profile,
+            timestamp: new Date().toISOString()
         });
     } catch (error) {
-        console.error(error);
+        //console.error(error);
         res.status(500).json({
             success: false,
-            message: "Failed to log in",
-            error: error.message
+            message: "An unexpected error occurred. Please try again later.",
+            timestamp: new Date().toISOString()
         });
     }
 };
 
-const refreshToken = async (req, res) => {
-    const { refreshToken: oldRefreshToken } = req.body;
+const upsertUserProfile = async (req, res) => {
+    const { user_id, full_name, bio, profile_picture_url } = req.body;
+
+    if (!user_id) {
+        return res.status(400).json({
+            success: false,
+            message: "User ID is required",
+            timestamp: new Date().toISOString()
+        });
+    }
+
     try {
-        const decoded = verifyToken(oldRefreshToken);
-        const user = await User.findByPk(decoded.id);
+        const [profile, created] = await UserProfile.upsert(
+            {
+                user_id,
+                full_name,
+                bio,
+                profile_picture_url
+            },
+            {
+                where: { user_id },
+                returning: true
+            }
+        );
 
-        if (!user) {
-            return res.status(404).json({ success: false, message: "User not found" });
-        }
-
-        const newAccessToken = jwt.sign({ id: user.id }, privateKey, { algorithm: 'RS256', expiresIn: '15m' });
-        const newRefreshToken = jwt.sign({ id: user.id }, privateKey, { algorithm: 'RS256', expiresIn: '7d' });
-
-        await RefreshToken.destroy({ where: { token: oldRefreshToken } });
-        await RefreshToken.create({ token: newRefreshToken, userId: user.id });
-
-        res.status(200).json({
+        res.status(created ? 201 : 200).json({
             success: true,
-            message: "Token refreshed",
-            data: { accessToken: newAccessToken, refreshToken: newRefreshToken }
+            message: created ? "Profile created successfully" : "Profile updated successfully",
+            data: profile,
+            timestamp: new Date().toISOString()
         });
     } catch (error) {
-        console.error('Error refreshing token:', error);
-        res.status(403).json({ success: false, message: "Invalid refresh token", error: error.message });
+        //console.error(error);
+        res.status(500).json({
+            success: false,
+            message: "An unexpected error occurred. Please try again later.",
+            timestamp: new Date().toISOString()
+        });
     }
 };
 
-
-const logoutUser = async (req, res) => {
+const deleteUserProfile = async (req, res) => {
+    const { user_id } = req.params;
     try {
-        const { refreshToken } = req.body;
-        console.log('Refresh Token Received:', refreshToken);
-
-        if (refreshToken) {
-            await RefreshToken.destroy({ where: { token: refreshToken } });
-
+        const result = await UserProfile.destroy({ where: { user_id } });
+        if (result) {
             res.status(200).json({
                 success: true,
-                message: "Logout successful"
+                message: "Profile deleted successfully",
+                data: { user_id },
+                timestamp: new Date().toISOString()
             });
         } else {
-            res.status(400).json({
+            res.status(404).json({
                 success: false,
-                message: "Refresh token missing or invalid"
+                message: "Profile not found",
+                timestamp: new Date().toISOString()
             });
         }
     } catch (error) {
-        console.error('Error during logout:', error);
+        //console.error(error);
         res.status(500).json({
             success: false,
-            message: "Failed to logout",
-            error: error.message
+            message: "An unexpected error occurred. Please try again later.",
+            timestamp: new Date().toISOString()
         });
     }
 };
 
-
-
-
-
-module.exports = { getUsers, createUser, loginUser, refreshToken, logoutUser };
+module.exports = { 
+    getUsers,
+    createUser,
+    getUserProfiles,
+    getUserProfileById,
+    upsertUserProfile,
+    deleteUserProfile
+};

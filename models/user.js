@@ -21,18 +21,6 @@ const User = sequelize.define('User', {
         type: DataTypes.STRING,
         allowNull: false
     },
-    full_name: {
-        type: DataTypes.STRING,
-        allowNull: true
-    },
-    bio: {
-        type: DataTypes.TEXT,
-        allowNull: true
-    },
-    profile_picture_url: {
-        type: DataTypes.STRING,
-        allowNull: true
-    },
     created_at: {
         type: DataTypes.DATE,
         defaultValue: DataTypes.NOW

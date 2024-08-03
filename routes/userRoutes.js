@@ -1,13 +1,21 @@
 const express = require('express');
 const router = express.Router();
-const verifyAccessToken = require('../middlewares/authMiddleware');
-const { getUsers, createUser, loginUser, refreshToken, logoutUser } = require('../controllers/userController');
+const multer = require('multer');
+const {
+    getUsers,
+    getUserProfiles,
+    getUserProfileById,
+    upsertUserProfile,
+    deleteUserProfile
+} = require('../controllers/userController');
 
-router.post('/login', loginUser);
-router.post('/register', createUser);
+const upload = multer({ dest: 'uploads/posts' });
 
-router.get('/users', verifyAccessToken, getUsers);
-router.post('/refresh-token', verifyAccessToken, refreshToken);
-router.post('/logout', verifyAccessToken, logoutUser);
+router.get('/users', getUsers);
+
+router.get('/profiles', getUserProfiles);
+router.get('/profiles/:user_id', getUserProfileById);
+router.post('/profiles', upload.single('image'), upsertUserProfile);
+router.delete('/profiles/:user_id', deleteUserProfile);
 
 module.exports = router;

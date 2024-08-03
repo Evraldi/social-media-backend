@@ -1,10 +1,10 @@
 const { Post, Like } = require('../models');
 
 const getLikesByPostId = async (req, res) => {
-    const { postId } = req.params;
+    const { post_id } = req.params;
 
     try {
-        const post = await Post.findByPk(postId, {
+        const post = await Post.findByPk(post_id, {
             include: {
                 model: Like,
                 attributes: ['user_id'],
@@ -20,7 +20,7 @@ const getLikesByPostId = async (req, res) => {
 
         res.status(200).json({
             success: true,
-            message: `Successfully retrieved ${post.Likes.length} like(s) for post ID ${postId}`,
+            message: `Successfully retrieved ${post.Likes.length} like(s) for post ID ${post_id}`,
             data: post.Likes,
         });
     } catch (error) {

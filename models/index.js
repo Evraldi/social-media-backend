@@ -9,6 +9,7 @@ const Follower = require('./follower');
 const Media = require('./media');
 const Notification = require('./notification');
 const RefreshToken = require('./RefreshToken');
+const UserProfile = require('./UserProfile');
 
 // User Relationships
 User.hasMany(Post, { foreignKey: 'user_id' });
@@ -35,6 +36,9 @@ Media.belongsTo(User, { foreignKey: 'user_id' });
 User.hasMany(Notification, { foreignKey: 'user_id' });
 Notification.belongsTo(User, { foreignKey: 'user_id' });
 
+User.hasOne(UserProfile, { foreignKey: 'user_id', onDelete: 'CASCADE' });
+UserProfile.belongsTo(User, { foreignKey: 'user_id' });
+
 // Post Relationships
 Post.hasMany(Comment, { foreignKey: 'post_id' });
 Comment.belongsTo(Post, { foreignKey: 'post_id' });
@@ -55,4 +59,4 @@ const initDb = async () => {
     }
 };
 
-module.exports = { sequelize, User, Post, Comment, Like, Friendship, Message, Follower, Media, Notification, RefreshToken, initDb };
+module.exports = { sequelize, User, Post, Comment, Like, Friendship, Message, Follower, Media, Notification, RefreshToken, UserProfile, initDb };

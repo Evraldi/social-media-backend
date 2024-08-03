@@ -3,6 +3,7 @@ const { initDb } = require('./models');
 const cors = require('cors');
 
 const userRoutes = require('./routes/userRoutes');
+const authRoutes = require('./routes/authRoutes');
 const postRoutes = require('./routes/postRoutes');
 const commentRoutes = require('./routes/commentRoutes');
 const likeRoutes = require('./routes/likeRoutes');
@@ -27,6 +28,7 @@ app.use(express.urlencoded({ extended: true }));
 
 
 app.use('/api/users', userRoutes);
+app.use('/api/auth', authRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/comments', commentRoutes);
 app.use('/api/likes', likeRoutes);

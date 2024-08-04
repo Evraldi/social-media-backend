@@ -1,5 +1,4 @@
 const { User, UserProfile } = require('../models');
-const bcrypt = require('bcrypt');
 
 const getUsers = async (req, res) => {
     try {
@@ -7,42 +6,9 @@ const getUsers = async (req, res) => {
         res.status(200).json({
             success: true,
             message: `Successfully retrieved ${users.length} user(s)`,
-            data: users,
-            timestamp: new Date().toISOString()
-        });
-    } catch (error) {
-        //console.error(error);
-        res.status(500).json({
-            success: false,
-            message: "An unexpected error occurred. Please try again later.",
-            timestamp: new Date().toISOString()
-        });
-    }
-};
-
-const createUser = async (req, res) => {
-    const { username, email, password } = req.body;
-    try {
-        const existingUser = await User.findOne({ where: { email } });
-        if (existingUser) {
-            return res.status(409).json({
-                success: false,
-                message: "User with this email already exists",
-                timestamp: new Date().toISOString()
-            });
-        }
-
-        const hashedPassword = await bcrypt.hash(password, 10);
-        const newUser = await User.create({ username, email, password: hashedPassword });
-        res.status(201).json({
-            success: true,
-            message: "User successfully created",
+            total_users: users.length,
             timestamp: new Date().toISOString(),
-            data: {
-                id: newUser.id,
-                username: newUser.username,
-                email: newUser.email
-            }
+            data: users
         });
     } catch (error) {
         //console.error(error);
@@ -60,8 +26,9 @@ const getUserProfiles = async (req, res) => {
         res.status(200).json({
             success: true,
             message: `Successfully retrieved ${profiles.length} profile(s)`,
-            data: profiles,
-            timestamp: new Date().toISOString()
+            total_profiles: profiles.length,
+            timestamp: new Date().toISOString(),
+            data: profiles
         });
     } catch (error) {
         //console.error(error);
@@ -87,9 +54,10 @@ const getUserProfileById = async (req, res) => {
         res.status(200).json({
             success: true,
             message: "Profile retrieved successfully",
+            timestamp: new Date().toISOString(),
             data: profile,
-            timestamp: new Date().toISOString()
         });
+
     } catch (error) {
         //console.error(error);
         res.status(500).json({
@@ -125,11 +93,19 @@ const upsertUserProfile = async (req, res) => {
             }
         );
 
+        const data = {
+            user_id: profile.user_id,
+            full_name: profile.full_name,
+            bio: profile.bio,
+            profile_picture_url: profile.profile_picture_url,
+            created_at: profile.created_at
+        };
+
         res.status(created ? 201 : 200).json({
             success: true,
             message: created ? "Profile created successfully" : "Profile updated successfully",
-            data: profile,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
+            data
         });
     } catch (error) {
         //console.error(error);
@@ -143,14 +119,22 @@ const upsertUserProfile = async (req, res) => {
 
 const deleteUserProfile = async (req, res) => {
     const { user_id } = req.params;
+    if (!user_id) {
+        return res.status(400).json({
+            success: false,
+            message: "User ID is required",
+            timestamp: new Date().toISOString()
+        });
+    }
+
     try {
         const result = await UserProfile.destroy({ where: { user_id } });
         if (result) {
             res.status(200).json({
                 success: true,
                 message: "Profile deleted successfully",
-                data: { user_id },
-                timestamp: new Date().toISOString()
+                timestamp: new Date().toISOString(),
+                data: user_id
             });
         } else {
             res.status(404).json({
@@ -171,7 +155,6 @@ const deleteUserProfile = async (req, res) => {
 
 module.exports = { 
     getUsers,
-    createUser,
     getUserProfiles,
     getUserProfileById,
     upsertUserProfile,

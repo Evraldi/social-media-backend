@@ -1,4 +1,4 @@
-const { User, RefreshToken } = require('../models');
+const { User, UserProfile, RefreshToken } = require('../models');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const fs = require('fs');
@@ -26,28 +26,44 @@ const verifyToken = (token) => {
 const createUser = async (req, res) => {
     const { username, email, password } = req.body;
     try {
-        const existingUser = await User.findOne({ where: { email } });
-        if (existingUser) {
+        const existingUserByEmail = await User.findOne({ where: { email } });
+        if (existingUserByEmail) {
             return res.status(409).json({
                 success: false,
                 message: "User with this email already exists"
             });
         }
 
+        const existingUserByUsername = await User.findOne({ where: { username } });
+        if (existingUserByUsername) {
+            return res.status(409).json({
+                success: false,
+                message: "User with this username already exists"
+            });
+        }
+
         const hashedPassword = await bcrypt.hash(password, 10);
         const newUser = await User.create({ username, email, password: hashedPassword });
-        
+
+        await UserProfile.create({
+            user_id: newUser.id,
+            full_name: null,
+            bio: null,
+            profile_picture_url: null
+        });
+
         res.status(201).json({
             success: true,
-            message: "User successfully created",
+            message: "User and user profile successfully created",
             data: {
                 id: newUser.id,
                 username: newUser.username,
-                email: newUser.email
+                email: newUser.email,
+                created_at: newUser.created_at
             }
         });
     } catch (error) {
-        console.error(error);
+        //console.error(error);
         res.status(500).json({
             success: false,
             message: "Failed to create user",
@@ -55,6 +71,7 @@ const createUser = async (req, res) => {
         });
     }
 };
+
 
 const loginUser = async (req, res) => {
     const { email, password } = req.body;

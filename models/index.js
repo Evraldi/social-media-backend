@@ -39,6 +39,7 @@ Notification.belongsTo(User, { foreignKey: 'user_id' });
 User.hasOne(UserProfile, { foreignKey: 'user_id', onDelete: 'CASCADE' });
 UserProfile.belongsTo(User, { foreignKey: 'user_id' });
 
+
 // Post Relationships
 Post.hasMany(Comment, { foreignKey: 'post_id' });
 Comment.belongsTo(Post, { foreignKey: 'post_id' });
@@ -48,6 +49,9 @@ Like.belongsTo(Post, { foreignKey: 'post_id' });
 
 Post.hasMany(Media, { foreignKey: 'post_id' });
 Media.belongsTo(Post, { foreignKey: 'post_id' });
+
+UserProfile.hasMany(Post, { foreignKey: 'user_id' });
+Post.belongsTo(UserProfile, { foreignKey: 'user_id' });
 
 // Sync DB
 const initDb = async () => {

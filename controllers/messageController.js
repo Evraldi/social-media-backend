@@ -3,6 +3,7 @@ const { Op } = require('sequelize');
 
 const sendMessage = async (req, res) => {
     const { sender_id, receiver_id, content } = req.body;
+
     try {
         if (!sender_id || !receiver_id || !content) {
             return res.status(400).json({
@@ -30,6 +31,7 @@ const sendMessage = async (req, res) => {
             });
         }
 
+        // Uncomment this if you want to prevent self-messaging
         // if (sender_id === receiver_id) {
         //     return res.status(400).json({
         //         success: false,
@@ -52,7 +54,6 @@ const sendMessage = async (req, res) => {
             }
         });
     } catch (error) {
-        //console.error(error);
         res.status(500).json({
             success: false,
             message: "An unexpected error occurred. Please try again later.",
@@ -61,9 +62,9 @@ const sendMessage = async (req, res) => {
     }
 };
 
-
 const getMessages = async (req, res) => {
     const { sender_id, receiver_id } = req.params;
+
     try {
         if (!sender_id || !receiver_id) {
             return res.status(400).json({
@@ -81,7 +82,8 @@ const getMessages = async (req, res) => {
                 timestamp: new Date().toISOString()
             });
         }
-        const sender= await User.findByPk(sender_id);
+
+        const sender = await User.findByPk(sender_id);
         if (!sender) {
             return res.status(404).json({
                 success: false,
@@ -127,7 +129,6 @@ const getMessages = async (req, res) => {
             }))
         });
     } catch (error) {
-        //console.error(error);
         res.status(500).json({
             success: false,
             message: "An unexpected error occurred. Please try again later.",
@@ -138,6 +139,7 @@ const getMessages = async (req, res) => {
 
 const getConversation = async (req, res) => {
     const { sender_id, receiver_id } = req.params;
+
     try {
         if (!sender_id || !receiver_id) {
             return res.status(400).json({
@@ -155,7 +157,8 @@ const getConversation = async (req, res) => {
                 timestamp: new Date().toISOString()
             });
         }
-        const sender= await User.findByPk(sender_id);
+
+        const sender = await User.findByPk(sender_id);
         if (!sender) {
             return res.status(404).json({
                 success: false,
@@ -163,7 +166,7 @@ const getConversation = async (req, res) => {
                 timestamp: new Date().toISOString()
             });
         }
-        
+
         const conversation = await Message.findAll({
             where: {
                 [Op.or]: [
@@ -206,7 +209,6 @@ const getConversation = async (req, res) => {
             }))
         });
     } catch (error) {
-        //console.error(error);
         res.status(500).json({
             success: false,
             message: "An unexpected error occurred. Please try again later.",
@@ -218,6 +220,7 @@ const getConversation = async (req, res) => {
 const updateMessage = async (req, res) => {
     const { id } = req.params;
     const { content } = req.body;
+
     try {
         if (!content) {
             return res.status(400).json({
@@ -254,7 +257,6 @@ const updateMessage = async (req, res) => {
             }
         });
     } catch (error) {
-        //console.error(error);
         res.status(500).json({
             success: false,
             message: "An unexpected error occurred. Please try again later.",
@@ -266,6 +268,7 @@ const updateMessage = async (req, res) => {
 const updateMessageStatus = async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
+
     try {
         if (!status) {
             return res.status(400).json({
@@ -301,7 +304,6 @@ const updateMessageStatus = async (req, res) => {
             }
         });
     } catch (error) {
-        //console.error(error);
         res.status(500).json({
             success: false,
             message: "An unexpected error occurred. Please try again later.",
@@ -312,6 +314,7 @@ const updateMessageStatus = async (req, res) => {
 
 const deleteMessage = async (req, res) => {
     const { id } = req.params;
+
     try {
         const result = await Message.destroy({ where: { id } });
         if (result) {
@@ -329,7 +332,6 @@ const deleteMessage = async (req, res) => {
             });
         }
     } catch (error) {
-        //console.error(error);
         res.status(500).json({
             success: false,
             message: "An unexpected error occurred. Please try again later.",
@@ -337,6 +339,5 @@ const deleteMessage = async (req, res) => {
         });
     }
 };
-
 
 module.exports = { sendMessage, getMessages, getConversation, updateMessage, updateMessageStatus, deleteMessage };

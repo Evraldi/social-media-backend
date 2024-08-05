@@ -1,7 +1,6 @@
-const { Post, User } = require('../models');
+const { Post, User, UserProfile } = require('../models');
 const path = require('path');
 const fs = require('fs');
-
 
 const getPostsByUserId = async (req, res) => {
     const { user_id } = req.params;
@@ -9,7 +8,10 @@ const getPostsByUserId = async (req, res) => {
     try {
         const posts = await Post.findAll({
             where: { user_id },
-            include: User,
+            include: {
+                model: UserProfile,
+                attributes: ['full_name', 'profile_picture_url'],
+            },
             order: [['created_at', 'DESC']],
         });
 
@@ -17,20 +19,21 @@ const getPostsByUserId = async (req, res) => {
             return res.status(404).json({
                 success: false,
                 message: 'No posts found for this user',
+                timestamp: new Date().toISOString(),
             });
         }
 
         res.status(200).json({
             success: true,
             message: `Successfully retrieved ${posts.length} post(s) for user ID ${user_id}`,
+            timestamp: new Date().toISOString(),
             data: posts,
         });
     } catch (error) {
-        console.error('Error retrieving posts by user ID:', error);
         res.status(500).json({
             success: false,
-            message: 'Failed to retrieve posts',
-            error: error.message,
+            message: "An unexpected error occurred. Please try again later.",
+            timestamp: new Date().toISOString(),
         });
     }
 };
@@ -40,27 +43,31 @@ const getPostById = async (req, res) => {
 
     try {
         const post = await Post.findByPk(id, {
-            include: User,
+            include: {
+                model: UserProfile,
+                attributes: ['full_name', 'profile_picture_url'],
+            },
         });
 
         if (!post) {
             return res.status(404).json({
                 success: false,
                 message: 'Post not found',
+                timestamp: new Date().toISOString(),
             });
         }
 
         res.status(200).json({
             success: true,
             message: `Successfully retrieved post with ID ${id}`,
+            timestamp: new Date().toISOString(),
             data: post,
         });
     } catch (error) {
-        console.error('Error retrieving post by ID:', error);
         res.status(500).json({
             success: false,
-            message: 'Failed to retrieve post',
-            error: error.message,
+            message: "An unexpected error occurred. Please try again later.",
+            timestamp: new Date().toISOString(),
         });
     }
 };
@@ -68,20 +75,24 @@ const getPostById = async (req, res) => {
 const getPosts = async (req, res) => {
     try {
         const posts = await Post.findAll({
-            include: User,
-            order: [['created_at', 'DESC']]
+            include: {
+                model: UserProfile,
+                attributes: ['full_name', 'profile_picture_url'],
+            },
+            order: [['created_at', 'DESC']],
         });
+
         res.status(200).json({
             success: true,
             message: `Successfully retrieved ${posts.length} post(s)`,
-            data: posts
+            timestamp: new Date().toISOString(),
+            data: posts,
         });
     } catch (error) {
-        console.error('Error retrieving posts:', error);
         res.status(500).json({
             success: false,
-            message: "Failed to retrieve posts",
-            error: error.message
+            message: "An unexpected error occurred. Please try again later.",
+            timestamp: new Date().toISOString(),
         });
     }
 };
@@ -95,7 +106,8 @@ const createPost = async (req, res) => {
         if (!user) {
             return res.status(404).json({
                 success: false,
-                message: "User not found"
+                message: "User not found",
+                timestamp: new Date().toISOString(),
             });
         }
 
@@ -108,20 +120,20 @@ const createPost = async (req, res) => {
         res.status(201).json({
             success: true,
             message: "Post successfully created",
+            timestamp: new Date().toISOString(),
             data: {
                 id: newPost.id,
                 user_id: newPost.user_id,
                 content: newPost.content,
                 image_url: newPost.image_url,
-                createdAt: newPost.createdAt
-            }
+                createdAt: newPost.createdAt,
+            },
         });
     } catch (error) {
-        console.error('Error creating post:', error);
         res.status(500).json({
             success: false,
-            message: "Failed to create post",
-            error: error.message
+            message: "An unexpected error occurred. Please try again later.",
+            timestamp: new Date().toISOString(),
         });
     }
 };
@@ -136,7 +148,8 @@ const updatePost = async (req, res) => {
         if (!post) {
             return res.status(404).json({
                 success: false,
-                message: "Post not found"
+                message: "Post not found",
+                timestamp: new Date().toISOString(),
             });
         }
 
@@ -151,42 +164,42 @@ const updatePost = async (req, res) => {
             image_url = file.path;
         }
 
-        const [updated] = await Post.update(
-            { content, image_url },
-            { where: { id } }
-        );
+        const [updated] = await Post.update({ content, image_url }, { where: { id } });
 
         if (updated) {
             const updatedPost = await Post.findByPk(id);
             res.status(200).json({
                 success: true,
                 message: "Post successfully updated",
-                data: updatedPost
+                timestamp: new Date().toISOString(),
+                data: updatedPost,
             });
         } else {
             res.status(404).json({
                 success: false,
-                message: "Post not found"
+                message: "Post not found",
+                timestamp: new Date().toISOString(),
             });
         }
     } catch (error) {
-        console.error('Error updating post:', error);
         res.status(500).json({
             success: false,
-            message: "Failed to update post",
-            error: error.message
+            message: "An unexpected error occurred. Please try again later.",
+            timestamp: new Date().toISOString(),
         });
     }
 };
 
 const deletePost = async (req, res) => {
     const { id } = req.params;
+
     try {
         const post = await Post.findByPk(id);
         if (!post) {
             return res.status(404).json({
                 success: false,
-                message: "Post not found"
+                message: "Post not found",
+                timestamp: new Date().toISOString(),
             });
         }
 
@@ -201,14 +214,14 @@ const deletePost = async (req, res) => {
         res.status(200).json({
             success: true,
             message: "Post successfully deleted",
-            data: { id }
+            timestamp: new Date().toISOString(),
+            data: { id },
         });
     } catch (error) {
-        console.error('Error deleting post:', error);
         res.status(500).json({
             success: false,
-            message: "Failed to delete post",
-            error: error.message
+            message: "An unexpected error occurred. Please try again later.",
+            timestamp: new Date().toISOString(),
         });
     }
 };

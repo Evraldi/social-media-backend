@@ -7,7 +7,7 @@ const getLikesByPostId = async (req, res) => {
         const post = await Post.findByPk(post_id, {
             include: {
                 model: Like,
-                attributes: ['user_id'],
+                attributes: ['user_id']
             },
         });
 
@@ -15,39 +15,46 @@ const getLikesByPostId = async (req, res) => {
             return res.status(404).json({
                 success: false,
                 message: 'Post not found',
+                timestamp: new Date().toISOString()
             });
         }
 
         res.status(200).json({
             success: true,
             message: `Successfully retrieved ${post.Likes.length} like(s) for post ID ${post_id}`,
+            timestamp: new Date().toISOString(),
             data: post.Likes,
         });
     } catch (error) {
-        console.error('Error retrieving likes:', error);
+        console.error(error);
         res.status(500).json({
             success: false,
-            message: 'Failed to retrieve likes',
-            error: error.message,
+            message: "An unexpected error occurred. Please try again later.",
+            timestamp: new Date().toISOString()
         });
     }
 };
 
 const likePost = async (req, res) => {
     const { post_id, user_id } = req.body;
+
     try {
         const existingLike = await Like.findOne({ where: { post_id, user_id } });
+
         if (existingLike) {
             return res.status(409).json({
                 success: false,
-                message: "User already liked this post"
+                message: "User already liked this post",
+                timestamp: new Date().toISOString()
             });
         }
 
         const newLike = await Like.create({ post_id, user_id });
+
         res.status(201).json({
             success: true,
             message: "Post successfully liked",
+            timestamp: new Date().toISOString(),
             data: {
                 id: newLike.id,
                 post_id: newLike.post_id,
@@ -59,20 +66,23 @@ const likePost = async (req, res) => {
         console.error(error);
         res.status(500).json({
             success: false,
-            message: "Failed to like post",
-            error: error.message
+            message: "An unexpected error occurred. Please try again later.",
+            timestamp: new Date().toISOString()
         });
     }
 };
 
 const unlikePost = async (req, res) => {
     const { post_id, user_id } = req.body;
+
     try {
         const result = await Like.destroy({ where: { post_id, user_id } });
+
         if (result) {
             res.status(200).json({
                 success: true,
                 message: "Post successfully unliked",
+                timestamp: new Date().toISOString(),
                 data: {
                     post_id,
                     user_id
@@ -81,15 +91,16 @@ const unlikePost = async (req, res) => {
         } else {
             res.status(404).json({
                 success: false,
-                message: "Like not found"
+                message: "Like not found",
+                timestamp: new Date().toISOString()
             });
         }
     } catch (error) {
         console.error(error);
         res.status(500).json({
             success: false,
-            message: "Failed to unlike post",
-            error: error.message
+            message: "An unexpected error occurred. Please try again later.",
+            timestamp: new Date().toISOString()
         });
     }
 };

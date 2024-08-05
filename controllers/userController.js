@@ -11,6 +11,7 @@ const getUsers = async (req, res) => {
             data: users
         });
     } catch (error) {
+        console.error(error);
         res.status(500).json({
             success: false,
             message: "An unexpected error occurred. Please try again later.",
@@ -30,6 +31,7 @@ const getUserProfiles = async (req, res) => {
             data: profiles
         });
     } catch (error) {
+        console.error(error);
         res.status(500).json({
             success: false,
             message: "An unexpected error occurred. Please try again later.",
@@ -60,6 +62,7 @@ const getUserProfileById = async (req, res) => {
         });
 
     } catch (error) {
+        console.error(error);
         res.status(500).json({
             success: false,
             message: "An unexpected error occurred. Please try again later.",
@@ -109,6 +112,7 @@ const upsertUserProfile = async (req, res) => {
         });
 
     } catch (error) {
+        console.error(error);
         res.status(500).json({
             success: false,
             message: "An unexpected error occurred. Please try again later.",
@@ -147,6 +151,7 @@ const deleteUserProfile = async (req, res) => {
         }
 
     } catch (error) {
+        console.error(error);
         res.status(500).json({
             success: false,
             message: "An unexpected error occurred. Please try again later.",
@@ -155,7 +160,7 @@ const deleteUserProfile = async (req, res) => {
     }
 };
 
-module.exports = { 
+module.exports = {
     getUsers,
     getUserProfiles,
     getUserProfileById,

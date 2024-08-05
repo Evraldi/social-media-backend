@@ -10,7 +10,7 @@ const getPostsByUserId = async (req, res) => {
             where: { user_id },
             include: {
                 model: UserProfile,
-                attributes: ['full_name', 'profile_picture_url'],
+                attributes: ['full_name', 'profile_picture_url']
             },
             order: [['created_at', 'DESC']],
         });
@@ -19,7 +19,7 @@ const getPostsByUserId = async (req, res) => {
             return res.status(404).json({
                 success: false,
                 message: 'No posts found for this user',
-                timestamp: new Date().toISOString(),
+                timestamp: new Date().toISOString()
             });
         }
 
@@ -27,13 +27,14 @@ const getPostsByUserId = async (req, res) => {
             success: true,
             message: `Successfully retrieved ${posts.length} post(s) for user ID ${user_id}`,
             timestamp: new Date().toISOString(),
-            data: posts,
+            data: posts
         });
     } catch (error) {
+        console.error(error);
         res.status(500).json({
             success: false,
             message: "An unexpected error occurred. Please try again later.",
-            timestamp: new Date().toISOString(),
+            timestamp: new Date().toISOString()
         });
     }
 };
@@ -45,7 +46,7 @@ const getPostById = async (req, res) => {
         const post = await Post.findByPk(id, {
             include: {
                 model: UserProfile,
-                attributes: ['full_name', 'profile_picture_url'],
+                attributes: ['full_name', 'profile_picture_url']
             },
         });
 
@@ -61,13 +62,14 @@ const getPostById = async (req, res) => {
             success: true,
             message: `Successfully retrieved post with ID ${id}`,
             timestamp: new Date().toISOString(),
-            data: post,
+            data: post
         });
     } catch (error) {
+        console.error(error);
         res.status(500).json({
             success: false,
             message: "An unexpected error occurred. Please try again later.",
-            timestamp: new Date().toISOString(),
+            timestamp: new Date().toISOString()
         });
     }
 };
@@ -77,22 +79,23 @@ const getPosts = async (req, res) => {
         const posts = await Post.findAll({
             include: {
                 model: UserProfile,
-                attributes: ['full_name', 'profile_picture_url'],
+                attributes: ['full_name', 'profile_picture_url']
             },
-            order: [['created_at', 'DESC']],
+            order: [['created_at', 'DESC']]
         });
 
         res.status(200).json({
             success: true,
             message: `Successfully retrieved ${posts.length} post(s)`,
             timestamp: new Date().toISOString(),
-            data: posts,
+            data: posts
         });
     } catch (error) {
+        console.error(error);
         res.status(500).json({
             success: false,
             message: "An unexpected error occurred. Please try again later.",
-            timestamp: new Date().toISOString(),
+            timestamp: new Date().toISOString()
         });
     }
 };
@@ -107,7 +110,7 @@ const createPost = async (req, res) => {
             return res.status(404).json({
                 success: false,
                 message: "User not found",
-                timestamp: new Date().toISOString(),
+                timestamp: new Date().toISOString()
             });
         }
 
@@ -126,14 +129,15 @@ const createPost = async (req, res) => {
                 user_id: newPost.user_id,
                 content: newPost.content,
                 image_url: newPost.image_url,
-                createdAt: newPost.createdAt,
+                createdAt: newPost.createdAt
             },
         });
     } catch (error) {
+        console.error(error);
         res.status(500).json({
             success: false,
             message: "An unexpected error occurred. Please try again later.",
-            timestamp: new Date().toISOString(),
+            timestamp: new Date().toISOString()
         });
     }
 };
@@ -149,7 +153,7 @@ const updatePost = async (req, res) => {
             return res.status(404).json({
                 success: false,
                 message: "Post not found",
-                timestamp: new Date().toISOString(),
+                timestamp: new Date().toISOString()
             });
         }
 
@@ -172,20 +176,21 @@ const updatePost = async (req, res) => {
                 success: true,
                 message: "Post successfully updated",
                 timestamp: new Date().toISOString(),
-                data: updatedPost,
+                data: updatedPost
             });
         } else {
             res.status(404).json({
                 success: false,
                 message: "Post not found",
-                timestamp: new Date().toISOString(),
+                timestamp: new Date().toISOString()
             });
         }
     } catch (error) {
+        console.error(error);
         res.status(500).json({
             success: false,
             message: "An unexpected error occurred. Please try again later.",
-            timestamp: new Date().toISOString(),
+            timestamp: new Date().toISOString()
         });
     }
 };
@@ -199,7 +204,7 @@ const deletePost = async (req, res) => {
             return res.status(404).json({
                 success: false,
                 message: "Post not found",
-                timestamp: new Date().toISOString(),
+                timestamp: new Date().toISOString()
             });
         }
 
@@ -215,15 +220,23 @@ const deletePost = async (req, res) => {
             success: true,
             message: "Post successfully deleted",
             timestamp: new Date().toISOString(),
-            data: { id },
+            data: { id }
         });
     } catch (error) {
+        console.error(error);
         res.status(500).json({
             success: false,
             message: "An unexpected error occurred. Please try again later.",
-            timestamp: new Date().toISOString(),
+            timestamp: new Date().toISOString()
         });
     }
 };
 
-module.exports = { getPosts, createPost, deletePost, updatePost, getPostsByUserId, getPostById };
+module.exports = {
+    getPosts,
+    createPost,
+    deletePost,
+    updatePost,
+    getPostsByUserId,
+    getPostById
+};

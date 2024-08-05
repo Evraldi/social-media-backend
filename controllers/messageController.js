@@ -54,6 +54,7 @@ const sendMessage = async (req, res) => {
             }
         });
     } catch (error) {
+        console.error(error);
         res.status(500).json({
             success: false,
             message: "An unexpected error occurred. Please try again later.",
@@ -129,6 +130,7 @@ const getMessages = async (req, res) => {
             }))
         });
     } catch (error) {
+        console.error(error);
         res.status(500).json({
             success: false,
             message: "An unexpected error occurred. Please try again later.",
@@ -209,6 +211,7 @@ const getConversation = async (req, res) => {
             }))
         });
     } catch (error) {
+        console.error(error);
         res.status(500).json({
             success: false,
             message: "An unexpected error occurred. Please try again later.",
@@ -257,6 +260,7 @@ const updateMessage = async (req, res) => {
             }
         });
     } catch (error) {
+        console.error(error);
         res.status(500).json({
             success: false,
             message: "An unexpected error occurred. Please try again later.",
@@ -304,6 +308,7 @@ const updateMessageStatus = async (req, res) => {
             }
         });
     } catch (error) {
+        console.error(error);
         res.status(500).json({
             success: false,
             message: "An unexpected error occurred. Please try again later.",
@@ -332,6 +337,7 @@ const deleteMessage = async (req, res) => {
             });
         }
     } catch (error) {
+        console.error(error);
         res.status(500).json({
             success: false,
             message: "An unexpected error occurred. Please try again later.",
@@ -340,4 +346,11 @@ const deleteMessage = async (req, res) => {
     }
 };
 
-module.exports = { sendMessage, getMessages, getConversation, updateMessage, updateMessageStatus, deleteMessage };
+module.exports = {
+    sendMessage,
+    getMessages,
+    getConversation,
+    updateMessage,
+    updateMessageStatus,
+    deleteMessage
+};

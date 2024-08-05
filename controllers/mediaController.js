@@ -9,7 +9,8 @@ const uploadMedia = async (req, res) => {
     if (!file) {
         return res.status(400).json({
             success: false,
-            message: "No file uploaded"
+            message: "No file uploaded",
+            timestamp: new Date().toISOString()
         });
     }
 
@@ -27,6 +28,7 @@ const uploadMedia = async (req, res) => {
         res.status(201).json({
             success: true,
             message: "Media uploaded successfully",
+            timestamp: new Date().toISOString(),
             data: {
                 id: newMedia.id,
                 user_id: newMedia.user_id,
@@ -37,14 +39,15 @@ const uploadMedia = async (req, res) => {
             }
         });
     } catch (error) {
+        console.error(error);
         if (file && fs.existsSync(file.path)) {
             fs.unlinkSync(file.path);
         }
 
         res.status(500).json({
             success: false,
-            message: "Failed to upload media",
-            error: error.message
+            message: "An unexpected error occurred. Please try again later.",
+            timestamp: new Date().toISOString()
         });
     }
 };

@@ -26,19 +26,24 @@ const verifyToken = (token) => {
 const createUser = async (req, res) => {
     const { username, email, password } = req.body;
     try {
-        const existingUserByEmail = await User.findOne({ where: { email } });
+        const [existingUserByEmail, existingUserByUsername] = await Promise.all([
+            User.findOne({ where: { email } }),
+            User.findOne({ where: { username } })
+        ]);
+
         if (existingUserByEmail) {
             return res.status(409).json({
                 success: false,
-                message: "User with this email already exists"
+                message: "User with this email already exists",
+                timestamp: new Date().toISOString()
             });
         }
 
-        const existingUserByUsername = await User.findOne({ where: { username } });
         if (existingUserByUsername) {
             return res.status(409).json({
                 success: false,
-                message: "User with this username already exists"
+                message: "User with this username already exists",
+                timestamp: new Date().toISOString()
             });
         }
 
@@ -55,6 +60,7 @@ const createUser = async (req, res) => {
         res.status(201).json({
             success: true,
             message: "User and user profile successfully created",
+            timestamp: new Date().toISOString(),
             data: {
                 id: newUser.id,
                 username: newUser.username,
@@ -63,15 +69,14 @@ const createUser = async (req, res) => {
             }
         });
     } catch (error) {
-        //console.error(error);
+        console.error(error);
         res.status(500).json({
             success: false,
-            message: "Failed to create user",
-            error: error.message
+            message: "An unexpected error occurred. Please try again later.",
+            timestamp: new Date().toISOString()
         });
     }
 };
-
 
 const loginUser = async (req, res) => {
     const { email, password } = req.body;
@@ -80,7 +85,8 @@ const loginUser = async (req, res) => {
         if (!user) {
             return res.status(404).json({
                 success: false,
-                message: "User not found"
+                message: "User not found",
+                timestamp: new Date().toISOString()
             });
         }
 
@@ -88,7 +94,8 @@ const loginUser = async (req, res) => {
         if (!isPasswordValid) {
             return res.status(401).json({
                 success: false,
-                message: "Invalid credentials"
+                message: "Invalid credentials",
+                timestamp: new Date().toISOString()
             });
         }
 
@@ -100,14 +107,15 @@ const loginUser = async (req, res) => {
         res.status(200).json({
             success: true,
             message: "Login successful",
+            timestamp: new Date().toISOString(),
             data: { accessToken, refreshToken }
         });
     } catch (error) {
         console.error(error);
         res.status(500).json({
             success: false,
-            message: "Failed to log in",
-            error: error.message
+            message: "An unexpected error occurred. Please try again later.",
+            timestamp: new Date().toISOString()
         });
     }
 };
@@ -125,17 +133,24 @@ const refreshToken = async (req, res) => {
         const newAccessToken = jwt.sign({ id: user.id }, privateKey, { algorithm: 'RS256', expiresIn: '15m' });
         const newRefreshToken = jwt.sign({ id: user.id }, privateKey, { algorithm: 'RS256', expiresIn: '7d' });
 
-        await RefreshToken.destroy({ where: { token: oldRefreshToken } });
-        await RefreshToken.create({ token: newRefreshToken, userId: user.id });
+        await Promise.all([
+            RefreshToken.destroy({ where: { token: oldRefreshToken } }),
+            RefreshToken.create({ token: newRefreshToken, userId: user.id })
+        ]);
 
         res.status(200).json({
             success: true,
             message: "Token refreshed",
+            timestamp: new Date().toISOString(),
             data: { accessToken: newAccessToken, refreshToken: newRefreshToken }
         });
     } catch (error) {
-        console.error('Error refreshing token:', error);
-        res.status(403).json({ success: false, message: "Invalid refresh token", error: error.message });
+        console.error(error);
+        res.status(403).json({
+             success: false,
+             message: "Invalid refresh token",
+             timestamp: new Date().toISOString()
+        });
     }
 };
 
@@ -148,20 +163,22 @@ const logoutUser = async (req, res) => {
 
             res.status(200).json({
                 success: true,
-                message: "Logout successful"
+                message: "Logout successful",
+                timestamp: new Date().toISOString()
             });
         } else {
             res.status(400).json({
                 success: false,
-                message: "Refresh token missing or invalid"
+                message: "Refresh token missing or invalid",
+                timestamp: new Date().toISOString()
             });
         }
     } catch (error) {
-        console.error('Error during logout:', error);
+        console.error(error);
         res.status(500).json({
             success: false,
-            message: "Failed to logout",
-            error: error.message
+            message: "An unexpected error occurred. Please try again later.",
+            timestamp: new Date().toISOString()
         });
     }
 };

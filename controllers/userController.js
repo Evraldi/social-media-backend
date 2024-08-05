@@ -11,7 +11,6 @@ const getUsers = async (req, res) => {
             data: users
         });
     } catch (error) {
-        //console.error(error);
         res.status(500).json({
             success: false,
             message: "An unexpected error occurred. Please try again later.",
@@ -31,7 +30,6 @@ const getUserProfiles = async (req, res) => {
             data: profiles
         });
     } catch (error) {
-        //console.error(error);
         res.status(500).json({
             success: false,
             message: "An unexpected error occurred. Please try again later.",
@@ -42,8 +40,10 @@ const getUserProfiles = async (req, res) => {
 
 const getUserProfileById = async (req, res) => {
     const { user_id } = req.params;
+
     try {
         const profile = await UserProfile.findOne({ where: { user_id } });
+
         if (!profile) {
             return res.status(404).json({
                 success: false,
@@ -51,15 +51,15 @@ const getUserProfileById = async (req, res) => {
                 timestamp: new Date().toISOString()
             });
         }
+
         res.status(200).json({
             success: true,
             message: "Profile retrieved successfully",
             timestamp: new Date().toISOString(),
-            data: profile,
+            data: profile
         });
 
     } catch (error) {
-        //console.error(error);
         res.status(500).json({
             success: false,
             message: "An unexpected error occurred. Please try again later.",
@@ -107,8 +107,8 @@ const upsertUserProfile = async (req, res) => {
             timestamp: new Date().toISOString(),
             data
         });
+
     } catch (error) {
-        //console.error(error);
         res.status(500).json({
             success: false,
             message: "An unexpected error occurred. Please try again later.",
@@ -119,6 +119,7 @@ const upsertUserProfile = async (req, res) => {
 
 const deleteUserProfile = async (req, res) => {
     const { user_id } = req.params;
+
     if (!user_id) {
         return res.status(400).json({
             success: false,
@@ -129,6 +130,7 @@ const deleteUserProfile = async (req, res) => {
 
     try {
         const result = await UserProfile.destroy({ where: { user_id } });
+
         if (result) {
             res.status(200).json({
                 success: true,
@@ -143,8 +145,8 @@ const deleteUserProfile = async (req, res) => {
                 timestamp: new Date().toISOString()
             });
         }
+
     } catch (error) {
-        //console.error(error);
         res.status(500).json({
             success: false,
             message: "An unexpected error occurred. Please try again later.",

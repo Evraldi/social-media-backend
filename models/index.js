@@ -29,6 +29,7 @@ User.hasMany(Message, { foreignKey: 'receiver_id', as: 'Receiver' });
 
 User.hasMany(Follower, { foreignKey: 'follower_id', as: 'Follower' });
 User.hasMany(Follower, { foreignKey: 'following_id', as: 'Following' });
+Follower.belongsTo(User, { foreignKey: 'follower_id', as: 'FollowerUser' });
 
 User.hasMany(Media, { foreignKey: 'user_id' });
 Media.belongsTo(User, { foreignKey: 'user_id' });
@@ -48,6 +49,8 @@ Like.belongsTo(Post, { foreignKey: 'post_id' });
 
 Post.hasMany(Media, { foreignKey: 'post_id' });
 Media.belongsTo(Post, { foreignKey: 'post_id' });
+
+// UserProfile Relationships
 
 UserProfile.hasMany(Post, { foreignKey: 'user_id' });
 Post.belongsTo(UserProfile, { foreignKey: 'user_id' });

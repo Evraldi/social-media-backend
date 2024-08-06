@@ -1,5 +1,4 @@
 const express = require('express');
-const router = express.Router();
 const multer = require('multer');
 const {
     getUsers,
@@ -9,13 +8,14 @@ const {
     deleteUserProfile
 } = require('../controllers/userController');
 
-const upload = multer({ dest: 'uploads/posts' });
+const router = express.Router();
+
+const upload = multer({ dest: 'uploads/profiles' });
 
 router.get('/users', getUsers);
-
 router.get('/profiles', getUserProfiles);
-router.get('/profiles/:user_id', getUserProfileById);
-router.post('/profiles', upload.single('image'), upsertUserProfile);
-router.delete('/profiles/:user_id', deleteUserProfile);
+router.get('/profiles/:id', getUserProfileById);
+router.put('/profiles/:id', upload.single('image'), upsertUserProfile);
+router.delete('/profiles/:id', deleteUserProfile);
 
 module.exports = router;

@@ -1,14 +1,22 @@
 const { User, UserProfile } = require('../models');
 
 const getUsers = async (req, res) => {
+    const { page = 1, limit = 10 } = req.query;
+
     try {
-        const users = await User.findAll();
+        const users = await User.findAndCountAll({
+            limit: parseInt(limit, 10),
+            offset: (page - 1) * limit
+        });
+        
         res.status(200).json({
             success: true,
-            message: `Successfully retrieved ${users.length} user(s)`,
-            total_users: users.length,
+            message: `Successfully retrieved ${users.rows.length} user(s)`,
+            total_users: users.count,
+            page: parseInt(page, 10),
+            total_pages: Math.ceil(users.count / limit),
             timestamp: new Date().toISOString(),
-            data: users
+            data: users.rows
         });
     } catch (error) {
         console.error(error);
@@ -21,14 +29,22 @@ const getUsers = async (req, res) => {
 };
 
 const getUserProfiles = async (req, res) => {
+    const { page = 1, limit = 10 } = req.query;
+
     try {
-        const profiles = await UserProfile.findAll();
+        const profiles = await UserProfile.findAndCountAll({
+            limit: parseInt(limit, 10),
+            offset: (page - 1) * limit
+        });
+        
         res.status(200).json({
             success: true,
-            message: `Successfully retrieved ${profiles.length} profile(s)`,
-            total_profiles: profiles.length,
+            message: `Successfully retrieved ${profiles.rows.length} profile(s)`,
+            total_profiles: profiles.count,
+            page: parseInt(page, 10),
+            total_pages: Math.ceil(profiles.count / limit),
             timestamp: new Date().toISOString(),
-            data: profiles
+            data: profiles.rows
         });
     } catch (error) {
         console.error(error);
@@ -41,10 +57,10 @@ const getUserProfiles = async (req, res) => {
 };
 
 const getUserProfileById = async (req, res) => {
-    const { user_id } = req.params;
+    const { id } = req.params;
 
     try {
-        const profile = await UserProfile.findOne({ where: { user_id } });
+        const profile = await UserProfile.findOne({ where: { user_id: id } });
 
         if (!profile) {
             return res.status(404).json({
@@ -72,9 +88,10 @@ const getUserProfileById = async (req, res) => {
 };
 
 const upsertUserProfile = async (req, res) => {
-    const { user_id, full_name, bio, profile_picture_url } = req.body;
+    const { id } = req.params;
+    const { full_name, bio, profile_picture_url } = req.body;
 
-    if (!user_id) {
+    if (!id) {
         return res.status(400).json({
             success: false,
             message: "User ID is required",
@@ -85,13 +102,12 @@ const upsertUserProfile = async (req, res) => {
     try {
         const [profile, created] = await UserProfile.upsert(
             {
-                user_id,
+                user_id: id,
                 full_name,
                 bio,
                 profile_picture_url
             },
             {
-                where: { user_id },
                 returning: true
             }
         );
@@ -122,9 +138,9 @@ const upsertUserProfile = async (req, res) => {
 };
 
 const deleteUserProfile = async (req, res) => {
-    const { user_id } = req.params;
+    const { id } = req.params;
 
-    if (!user_id) {
+    if (!id) {
         return res.status(400).json({
             success: false,
             message: "User ID is required",
@@ -133,14 +149,14 @@ const deleteUserProfile = async (req, res) => {
     }
 
     try {
-        const result = await UserProfile.destroy({ where: { user_id } });
+        const result = await UserProfile.destroy({ where: { user_id: id } });
 
         if (result) {
             res.status(200).json({
                 success: true,
                 message: "Profile deleted successfully",
                 timestamp: new Date().toISOString(),
-                data: user_id
+                data: id
             });
         } else {
             res.status(404).json({

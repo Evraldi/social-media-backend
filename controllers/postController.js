@@ -2,17 +2,63 @@ const { Post, User, UserProfile } = require('../models');
 const path = require('path');
 const fs = require('fs');
 
-const getPostsByUserId = async (req, res) => {
-    const { user_id } = req.params;
+const paginate = (query) => {
+    const page = parseInt(query.page, 10) || 1;
+    const limit = parseInt(query.limit, 10) || 10;
+    const offset = (page - 1) * limit;
+    return { limit, offset };
+};
+
+const getPosts = async (req, res) => {
+    const { limit, offset } = paginate(req.query);
 
     try {
-        const posts = await Post.findAll({
+        const { count, rows: posts } = await Post.findAndCountAll({
+            include: {
+                model: UserProfile,
+                attributes: ['full_name', 'profile_picture_url']
+            },
+            order: [['created_at', 'DESC']],
+            limit,
+            offset
+        });
+
+        res.status(200).json({
+            success: true,
+            message: `Successfully retrieved ${posts.length} post(s)`,
+            timestamp: new Date().toISOString(),
+            data: posts,
+            pagination: {
+                totalPosts: count,
+                totalPages: Math.ceil(count / limit),
+                currentPage: parseInt(req.query.page, 10) || 1,
+                limit
+            }
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            success: false,
+            message: "An unexpected error occurred. Please try again later.",
+            timestamp: new Date().toISOString()
+        });
+    }
+};
+
+const getPostsByUserId = async (req, res) => {
+    const { user_id } = req.query;
+    const { limit, offset } = paginate(req.query);
+
+    try {
+        const { count, rows: posts } = await Post.findAndCountAll({
             where: { user_id },
             include: {
                 model: UserProfile,
                 attributes: ['full_name', 'profile_picture_url']
             },
             order: [['created_at', 'DESC']],
+            limit,
+            offset
         });
 
         if (!posts.length) {
@@ -27,7 +73,13 @@ const getPostsByUserId = async (req, res) => {
             success: true,
             message: `Successfully retrieved ${posts.length} post(s) for user ID ${user_id}`,
             timestamp: new Date().toISOString(),
-            data: posts
+            data: posts,
+            pagination: {
+                totalPosts: count,
+                totalPages: Math.ceil(count / limit),
+                currentPage: parseInt(req.query.page, 10) || 1,
+                limit
+            }
         });
     } catch (error) {
         console.error(error);
@@ -63,32 +115,6 @@ const getPostById = async (req, res) => {
             message: `Successfully retrieved post with ID ${id}`,
             timestamp: new Date().toISOString(),
             data: post
-        });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({
-            success: false,
-            message: "An unexpected error occurred. Please try again later.",
-            timestamp: new Date().toISOString()
-        });
-    }
-};
-
-const getPosts = async (req, res) => {
-    try {
-        const posts = await Post.findAll({
-            include: {
-                model: UserProfile,
-                attributes: ['full_name', 'profile_picture_url']
-            },
-            order: [['created_at', 'DESC']]
-        });
-
-        res.status(200).json({
-            success: true,
-            message: `Successfully retrieved ${posts.length} post(s)`,
-            timestamp: new Date().toISOString(),
-            data: posts
         });
     } catch (error) {
         console.error(error);

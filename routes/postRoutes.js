@@ -13,11 +13,12 @@ const router = express.Router();
 
 const upload = multer({ dest: 'uploads/posts', limits: { fileSize: 5 * 1024 * 1024 } });
 
-router.get('/', getPosts);
-router.get('/posts', getPostsByUserId);
-router.get('/:id', getPostById);
-router.post('/', upload.single('image'), createPost);
-router.put('/:id', upload.single('image'), updatePost);
-router.delete('/:id', deletePost);
+router.get('/posts', getPosts);
+router.get('/users/:user_id/posts', getPostsByUserId);
+router.get('/posts/:id', getPostById);
+router.post('/posts', upload.single('image'), createPost);
+router.put('/posts/:id', upload.single('image'), updatePost);
+router.delete('/posts/:id', deletePost);
+
 
 module.exports = router;

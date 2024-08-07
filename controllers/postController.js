@@ -46,7 +46,7 @@ const getPosts = async (req, res) => {
 };
 
 const getPostsByUserId = async (req, res) => {
-    const { user_id } = req.query;
+    const { user_id } = req.params;
     const { limit, offset } = paginate(req.query);
 
     try {

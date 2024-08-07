@@ -64,7 +64,8 @@ const sendMessage = async (req, res) => {
 };
 
 const getMessages = async (req, res) => {
-    const { sender_id, receiver_id } = req.params;
+    const { sender_id, receiver_id } = req.query;
+    const { limit = 10, offset = 0 } = req.query;
 
     try {
         if (!sender_id || !receiver_id) {
@@ -95,7 +96,9 @@ const getMessages = async (req, res) => {
 
         const messages = await Message.findAll({
             where: { sender_id, receiver_id },
-            order: [['created_at', 'ASC']]
+            order: [['created_at', 'ASC']],
+            limit: parseInt(limit),
+            offset: parseInt(offset)
         });
 
         if (messages.length === 0) {

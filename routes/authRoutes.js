@@ -3,9 +3,9 @@ const router = express.Router();
 const verifyAccessToken = require('../middlewares/authMiddleware');
 const { loginUser, refreshToken, logoutUser, createUser } = require('../controllers/authController');
 
-router.post('/signup', createUser);
-router.post('/login', loginUser);
-router.post('/refresh-token', verifyAccessToken, refreshToken);
-router.post('/logout', verifyAccessToken, logoutUser);
+router.post('/auth/signup', createUser);
+router.post('/auth/login', loginUser);
+router.post('/auth/refresh-token', verifyAccessToken, refreshToken);
+router.post('/auth/logout', verifyAccessToken, logoutUser);
 
 module.exports = router;

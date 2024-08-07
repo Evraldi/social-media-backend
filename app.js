@@ -34,9 +34,9 @@ app.use('/api/comments', commentRoutes);
 app.use('/api/likes', likeRoutes);
 app.use('/api/friendships', friendshipRoutes);
 app.use('/api/messages', messageRoutes);
-app.use('/api/followers', followerRoutes);
-app.use('/api/notifications', notificationRoutes);
-app.use('/api/media', mediaRoutes);
+app.use('/api', followerRoutes);
+app.use('/api', notificationRoutes);
+app.use('/api', mediaRoutes);
 
 const startServer = async () => {
     await initDb();

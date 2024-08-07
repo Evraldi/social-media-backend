@@ -1,15 +1,33 @@
 const { Notification, User } = require('../models');
 
+const paginate = (query) => {
+    const page = parseInt(query.page, 10) || 1;
+    const limit = parseInt(query.limit, 10) || 10;
+    const offset = (page - 1) * limit;
+    return { limit, offset };
+};
+
 const getNotifications = async (req, res) => {
     const { user_id } = req.params;
+    const { limit, offset } = paginate(req.query);
 
     try {
-        const notifications = await Notification.findAll({ where: { user_id } });
+        const { count, rows } = await Notification.findAndCountAll({
+            where: { user_id },
+            limit,
+            offset
+        });
 
         res.status(200).json({
             success: true,
             timestamp: new Date().toISOString(),
-            data: notifications
+            data: rows,
+            meta: {
+                total: count,
+                page: parseInt(req.query.page, 10) || 1,
+                totalPages: Math.ceil(count / limit),
+                perPage: limit
+            }
         });
     } catch (error) {
         console.error(error);
@@ -50,7 +68,8 @@ const createNotificationForAll = async (req, res) => {
         const users = await User.findAll({ attributes: ['id'] });
         const notifications = users.map(user => ({ user_id: user.id, content }));
 
-        const newNotifications = await Notification.bulkCreate(notifications);
+        // Optional: Batch creation to prevent overwhelming the database
+        const newNotifications = await Notification.bulkCreate(notifications, { individualHooks: true });
 
         res.status(201).json({
             success: true,

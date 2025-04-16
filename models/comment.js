@@ -1,31 +1,40 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
+const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
 
-const Comment = sequelize.define('Comment', {
-    id: {
-        type: DataTypes.INTEGER,
-        autoIncrement: true,
-        primaryKey: true
+const CommentSchema = new Schema({
+    post: {
+        type: Schema.Types.ObjectId,
+        ref: 'Post',
+        required: true
     },
-    post_id: {
-        type: DataTypes.INTEGER,
-        allowNull: false
-    },
-    user_id: {
-        type: DataTypes.INTEGER,
-        allowNull: false
+    user: {
+        type: Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
     },
     content: {
-        type: DataTypes.TEXT,
-        allowNull: false
+        type: String,
+        required: true
+    },
+    parent_id: {
+        type: Schema.Types.ObjectId,
+        ref: 'Comment',
+        default: null
     },
     created_at: {
-        type: DataTypes.DATE,
-        defaultValue: DataTypes.NOW
+        type: Date,
+        default: Date.now
+    },
+    likes_count: {
+        type: Number,
+        default: 0
     }
-}, {
-    timestamps: false,
-    tableName: 'comments'
 });
 
-module.exports = Comment;
+// Create indexes for frequently queried fields
+CommentSchema.index({ post: 1 });
+CommentSchema.index({ user: 1 });
+CommentSchema.index({ parent_id: 1 });
+CommentSchema.index({ created_at: -1 });
+
+module.exports = mongoose.model('Comment', CommentSchema);

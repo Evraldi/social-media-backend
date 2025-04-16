@@ -1,37 +1,26 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
+const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
 
-const UserProfile = sequelize.define('UserProfile', {
-    id: {
-        type: DataTypes.INTEGER,
-        autoIncrement: true,
-        primaryKey: true
-    },
-    user_id: {
-        type: DataTypes.INTEGER,
-        references: {
-            model: 'users',
-            key: 'id'
-        },
-        allowNull: false,
-        unique: true,
-        onDelete: 'CASCADE'
+const UserProfileSchema = new Schema({
+    user: {
+        type: Schema.Types.ObjectId,
+        ref: 'User',
+        required: true,
+        unique: true
     },
     full_name: {
-        type: DataTypes.STRING,
-        allowNull: true
+        type: String
     },
     bio: {
-        type: DataTypes.TEXT,
-        allowNull: true
+        type: String
     },
     profile_picture_url: {
-        type: DataTypes.STRING,
-        allowNull: true
+        type: String
     }
-}, {
-    timestamps: false,
-    tableName: 'user_profiles'
 });
 
-module.exports = UserProfile;
+// Create indexes for frequently queried fields
+// user is already indexed due to unique: true
+UserProfileSchema.index({ full_name: 'text' }); // For text search on full name
+
+module.exports = mongoose.model('UserProfile', UserProfileSchema);

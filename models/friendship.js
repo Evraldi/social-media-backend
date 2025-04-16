@@ -1,27 +1,36 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
+const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
 
-const Friendship = sequelize.define('Friendship', {
-    id: {
-        type: DataTypes.INTEGER,
-        autoIncrement: true,
-        primaryKey: true
+const FriendshipSchema = new Schema({
+    requester: {
+        type: Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
     },
-    requester_id: {
-        type: DataTypes.INTEGER,
-        allowNull: false
-    },
-    receiver_id: {
-        type: DataTypes.INTEGER,
-        allowNull: false
+    receiver: {
+        type: Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
     },
     status: {
-        type: DataTypes.ENUM('pending', 'accepted'),
-        defaultValue: 'pending'
+        type: String,
+        enum: ['pending', 'accepted', 'rejected'],
+        default: 'pending'
+    },
+    created_at: {
+        type: Date,
+        default: Date.now
     }
-}, {
-    timestamps: false,
-    tableName: 'friendships'
 });
 
-module.exports = Friendship;
+// Create indexes for frequently queried fields
+// Compound index to ensure uniqueness of friendship requests
+FriendshipSchema.index({ requester: 1, receiver: 1 }, { unique: true });
+
+// Additional indexes for common queries
+FriendshipSchema.index({ requester: 1, status: 1 }); // For finding friend requests sent by a user
+FriendshipSchema.index({ receiver: 1, status: 1 }); // For finding friend requests received by a user
+FriendshipSchema.index({ status: 1 }); // For filtering by status
+FriendshipSchema.index({ created_at: -1 }); // For sorting by creation date
+
+module.exports = mongoose.model('Friendship', FriendshipSchema);

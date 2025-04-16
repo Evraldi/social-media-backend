@@ -1,35 +1,34 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
+const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
 
-const Media = sequelize.define('Media', {
-    id: {
-        type: DataTypes.INTEGER,
-        autoIncrement: true,
-        primaryKey: true
+const MediaSchema = new Schema({
+    user: {
+        type: Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
     },
-    user_id: {
-        type: DataTypes.INTEGER,
-        allowNull: false
-    },
-    post_id: {
-        type: DataTypes.INTEGER,
-        allowNull: true
+    post: {
+        type: Schema.Types.ObjectId,
+        ref: 'Post'
     },
     media_url: {
-        type: DataTypes.STRING,
-        allowNull: false
+        type: String,
+        required: true
     },
     media_type: {
-        type: DataTypes.STRING,
-        allowNull: false
+        type: String,
+        required: true
     },
     created_at: {
-        type: DataTypes.DATE,
-        defaultValue: DataTypes.NOW
+        type: Date,
+        default: Date.now
     }
-}, {
-    timestamps: false,
-    tableName: 'media'
 });
 
-module.exports = Media;
+// Create indexes for frequently queried fields
+MediaSchema.index({ user: 1 }); // For finding media by user
+MediaSchema.index({ post: 1 }); // For finding media by post
+MediaSchema.index({ media_type: 1 }); // For filtering by media type
+MediaSchema.index({ created_at: -1 }); // For sorting by creation date
+
+module.exports = mongoose.model('Media', MediaSchema);

@@ -1,94 +1,163 @@
 const { Follower, User } = require('../models');
+const mongoose = require('mongoose');
+const { getPaginationOptions, getPaginationMetadata } = require('../utils/pagination');
+const { asyncHandler } = require('../middlewares/errorMiddleware');
+const { BadRequestError, NotFoundError, ConflictError } = require('../utils/customErrors');
 
-const getFollowersByUserId = async (req, res) => {
+/**
+ * Get followers for a user
+ * @route GET /api/users/:user_id/followers
+ */
+const getFollowersByUserId = asyncHandler(async (req, res) => {
     const { user_id } = req.params;
+    const { page, limit, skip } = getPaginationOptions(req.query);
 
-    try {
-        const followers = await Follower.findAll({
-            where: { following_id: user_id },
-            include: [
-                {
-                    model: User,
-                    as: 'FollowerUser',
-                    attributes: []
-                }
-            ],
-            attributes: ['id', 'follower_id', 'following_id']
-        });
-
-        if (followers.length > 0) {
-            res.status(200).json({
-                success: true,
-                message: "Followers retrieved successfully",
-                timestamp: new Date().toISOString(),
-                data: followers
-            });
-        } else {
-            res.status(404).json({
-                success: false,
-                message: "No followers found for this user",
-                timestamp: new Date().toISOString()
-            });
-        }
-    } catch (error) {
-        console.error('Error retrieving followers:', error);
-        res.status(500).json({
-            success: false,
-            message: "An unexpected error occurred. Please try again later.",
-            timestamp: new Date().toISOString()
-        });
+    // Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(user_id)) {
+        throw new BadRequestError("Invalid user ID format");
     }
-};
 
-const followUser = async (req, res) => {
-    const { follower_id, following_id } = req.body;
+    // Check if user exists
+    const user = await User.findById(user_id);
+    if (!user) {
+        throw new NotFoundError("User not found");
+    }
 
-    try {
-        const newFollow = await Follower.create({ follower_id, following_id });
+    // Get total count for pagination
+    const totalFollowers = await Follower.countDocuments({ following: user_id });
 
-        res.status(201).json({
+    // Get followers with pagination
+    const followers = await Follower.find({ following: user_id })
+        .populate('follower', 'username')
+        .skip(skip)
+        .limit(limit);
+
+    const message = followers.length > 0 ? "Followers retrieved successfully" : "No followers found for this user";
+
+    res.status(200).json({
+        success: true,
+        message,
+        timestamp: new Date().toISOString(),
+        data: followers,
+        pagination: getPaginationMetadata(totalFollowers, page, limit)
+    });
+});
+
+/**
+ * Get following for a user
+ * @route GET /api/users/:user_id/following
+ */
+const getFollowingByUserId = asyncHandler(async (req, res) => {
+    const { user_id } = req.params;
+    const { page, limit, skip } = getPaginationOptions(req.query);
+
+    // Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(user_id)) {
+        throw new BadRequestError("Invalid user ID format");
+    }
+
+    // Check if user exists
+    const user = await User.findById(user_id);
+    if (!user) {
+        throw new NotFoundError("User not found");
+    }
+
+    // Get total count for pagination
+    const totalFollowing = await Follower.countDocuments({ follower: user_id });
+
+    // Get following with pagination
+    const following = await Follower.find({ follower: user_id })
+        .populate('following', 'username')
+        .skip(skip)
+        .limit(limit);
+
+    res.status(200).json({
+        success: true,
+        message: following.length > 0 ? "Following retrieved successfully" : "User is not following anyone",
+        timestamp: new Date().toISOString(),
+        data: following,
+        pagination: getPaginationMetadata(totalFollowing, page, limit)
+    });
+});
+
+/**
+ * Follow a user
+ * @route POST /api/users/:user_id/follow
+ */
+const followUser = asyncHandler(async (req, res) => {
+    const { user_id } = req.params; // User to follow
+    const follower_id = req.user._id; // Current authenticated user
+
+    // Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(user_id)) {
+        throw new BadRequestError("Invalid user ID format");
+    }
+
+    // Prevent self-following
+    if (follower_id.toString() === user_id) {
+        throw new BadRequestError("You cannot follow yourself");
+    }
+
+    // Check if user to follow exists
+    const userToFollow = await User.findById(user_id);
+    if (!userToFollow) {
+        throw new NotFoundError("User not found");
+    }
+
+    // Check if already following
+    const existingFollow = await Follower.findOne({ follower: follower_id, following: user_id });
+    if (existingFollow) {
+        throw new ConflictError("You are already following this user");
+    }
+
+    // Create follow relationship
+    const newFollow = new Follower({
+        follower: follower_id,
+        following: user_id
+    });
+
+    await newFollow.save();
+
+    res.status(201).json({
+        success: true,
+        message: "Now following this user successfully",
+        timestamp: new Date().toISOString(),
+        data: newFollow
+    });
+});
+
+/**
+ * Unfollow a user
+ * @route DELETE /api/users/:user_id/follow
+ */
+const unfollowUser = asyncHandler(async (req, res) => {
+    const { user_id } = req.params; // User to unfollow
+    const follower_id = req.user._id; // Current authenticated user
+
+    // Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(user_id)) {
+        throw new BadRequestError("Invalid user ID format");
+    }
+
+    // Check if user to unfollow exists
+    const userToUnfollow = await User.findById(user_id);
+    if (!userToUnfollow) {
+        throw new NotFoundError("User not found");
+    }
+
+    // Find and delete follow relationship
+    const result = await Follower.findOneAndDelete({ follower: follower_id, following: user_id });
+
+    if (result) {
+        res.status(200).json({
             success: true,
-            message: "User followed successfully",
+            message: "User unfollowed successfully",
             timestamp: new Date().toISOString(),
-            data: newFollow
+            data: result
         });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({
-            success: false,
-            message: "An unexpected error occurred. Please try again later.",
-            timestamp: new Date().toISOString()
-        });
+    } else {
+        throw new NotFoundError("You are not following this user");
     }
-};
+});
 
-const unfollowUser = async (req, res) => {
-    const { follower_id, following_id } = req.body;
-
-    try {
-        const result = await Follower.destroy({ where: { follower_id, following_id } });
-
-        if (result) {
-            res.status(200).json({
-                success: true,
-                message: "User unfollowed",
-                timestamp: new Date().toISOString()
-            });
-        } else {
-            res.status(404).json({
-                success: false,
-                message: "Follow relationship not found",
-                timestamp: new Date().toISOString()
-            });
-        }
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({
-            success: false,
-            message: "An unexpected error occurred. Please try again later.",
-            timestamp: new Date().toISOString()
-        });
-    }
-};
-
-module.exports = { followUser, unfollowUser, getFollowersByUserId };
+module.exports = { followUser, unfollowUser, getFollowersByUserId, getFollowingByUserId };

@@ -1,31 +1,42 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
+const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
 
-const Post = sequelize.define('Post', {
-    id: {
-        type: DataTypes.INTEGER,
-        autoIncrement: true,
-        primaryKey: true
-    },
-    user_id: {
-        type: DataTypes.INTEGER,
-        allowNull: false
+const PostSchema = new Schema({
+    user: {
+        type: Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
     },
     content: {
-        type: DataTypes.TEXT,
-        allowNull: true
+        type: String
     },
     image_url: {
-        type: DataTypes.STRING,
-        allowNull: true
+        type: String
+    },
+    visibility: {
+        type: String,
+        enum: ['public', 'private', 'friends'],
+        default: 'public'
     },
     created_at: {
-        type: DataTypes.DATE,
-        defaultValue: DataTypes.NOW
+        type: Date,
+        default: Date.now
+    },
+    likes_count: {
+        type: Number,
+        default: 0
+    },
+    comments_count: {
+        type: Number,
+        default: 0
     }
-}, {
-    timestamps: false,
-    tableName: 'posts'
 });
 
-module.exports = Post;
+// Create indexes for frequently queried fields
+PostSchema.index({ user: 1 });
+PostSchema.index({ created_at: -1 });
+PostSchema.index({ visibility: 1 });
+PostSchema.index({ likes_count: -1 });
+PostSchema.index({ comments_count: -1 });
+
+module.exports = mongoose.model('Post', PostSchema);

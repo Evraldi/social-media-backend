@@ -1,33 +1,30 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
+const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
 
-const Like = sequelize.define('Like', {
-    id: {
-        type: DataTypes.INTEGER,
-        autoIncrement: true,
-        primaryKey: true
+const LikeSchema = new Schema({
+    post: {
+        type: Schema.Types.ObjectId,
+        ref: 'Post',
+        required: true
     },
-    post_id: {
-        type: DataTypes.INTEGER,
-        allowNull: false
-    },
-    user_id: {
-        type: DataTypes.INTEGER,
-        allowNull: false
+    user: {
+        type: Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
     },
     created_at: {
-        type: DataTypes.DATE,
-        defaultValue: DataTypes.NOW
+        type: Date,
+        default: Date.now
     }
-}, {
-    timestamps: false,
-    tableName: 'likes',
-    indexes: [
-        {
-            unique: true,
-            fields: ['post_id', 'user_id']
-        }
-    ]
 });
 
-module.exports = Like;
+// Create indexes for frequently queried fields
+// Compound index to ensure a user can't like a post more than once
+LikeSchema.index({ post: 1, user: 1 }, { unique: true });
+
+// Additional indexes for common queries
+LikeSchema.index({ post: 1 }); // For counting likes on a post
+LikeSchema.index({ user: 1 }); // For finding posts liked by a user
+LikeSchema.index({ created_at: -1 }); // For sorting by creation date
+
+module.exports = mongoose.model('Like', LikeSchema);

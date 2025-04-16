@@ -1,36 +1,41 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
+const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
 
-const Message = sequelize.define('Message', {
-    id: {
-        type: DataTypes.INTEGER,
-        autoIncrement: true,
-        primaryKey: true
+const MessageSchema = new Schema({
+    sender: {
+        type: Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
     },
-    sender_id: {
-        type: DataTypes.INTEGER,
-        allowNull: false
-    },
-    receiver_id: {
-        type: DataTypes.INTEGER,
-        allowNull: false
+    receiver: {
+        type: Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
     },
     content: {
-        type: DataTypes.TEXT,
-        allowNull: false
+        type: String,
+        required: true
     },
     status: {
-        type: DataTypes.ENUM('sent', 'delivered', 'read'),
-        defaultValue: 'sent',
-        allowNull: false
+        type: String,
+        enum: ['sent', 'delivered', 'read'],
+        default: 'sent',
+        required: true
+    },
+    read: {
+        type: Boolean,
+        default: false
     },
     created_at: {
-        type: DataTypes.DATE,
-        defaultValue: DataTypes.NOW
+        type: Date,
+        default: Date.now
     }
-}, {
-    timestamps: false,
-    tableName: 'messages'
 });
 
-module.exports = Message;
+// Create indexes for frequently queried fields
+MessageSchema.index({ sender: 1, receiver: 1 });
+MessageSchema.index({ receiver: 1, sender: 1 }); // For conversation queries
+MessageSchema.index({ receiver: 1, read: 1 });
+MessageSchema.index({ created_at: -1 });
+
+module.exports = mongoose.model('Message', MessageSchema);

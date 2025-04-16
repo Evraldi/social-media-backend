@@ -1,10 +1,23 @@
-const express = require('express');
-const { likePost, unlikePost, getLikesByPostId } = require('../controllers/likeController');
-const router = express.Router();
+const { createRouters } = require('../config/routeConfig');
+const { createLike, deleteLike, getLikes } = require('../controllers/likeController');
+const { validate } = require('../middlewares/validationMiddleware');
+const {
+    getLikesRules,
+    createLikeRules,
+    deleteLikeRules
+} = require('../validations/likeValidations');
 
-router.put('/posts/:post_id/like', likePost);
-router.delete('/posts/:post_id/like', unlikePost);
-router.get('/posts/:post_id/likes', getLikesByPostId);
+// Create public and private routers
+const { publicRouter, privateRouter } = createRouters();
 
+// Public routes - no authentication required
+publicRouter.get('/posts/:post_id/likes', validate(getLikesRules), getLikes);
 
-module.exports = router;
+// Private routes - authentication required
+privateRouter.post('/posts/:post_id/likes', validate(createLikeRules), createLike);
+privateRouter.delete('/posts/:post_id/likes', validate(deleteLikeRules), deleteLike);
+
+module.exports = {
+  publicLikeRoutes: publicRouter,
+  privateLikeRoutes: privateRouter
+};

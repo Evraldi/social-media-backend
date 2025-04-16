@@ -1,11 +1,26 @@
-const express = require('express');
-const router = express.Router();
-const verifyAccessToken = require('../middlewares/authMiddleware');
+const { createRouters } = require('../config/routeConfig');
 const { loginUser, refreshToken, logoutUser, createUser } = require('../controllers/authController');
+const { validate } = require('../middlewares/validationMiddleware');
+const {
+    signupRules,
+    loginRules,
+    refreshTokenRules,
+    logoutRules
+} = require('../validations/authValidations');
 
-router.post('/auth/signup', createUser);
-router.post('/auth/login', loginUser);
-router.post('/auth/refresh-token', verifyAccessToken, refreshToken);
-router.post('/auth/logout', verifyAccessToken, logoutUser);
+// Create public and private routers
+const { publicRouter, privateRouter } = createRouters();
 
-module.exports = router;
+// Public routes - no authentication required
+publicRouter.post('/signup', validate(signupRules), createUser);
+publicRouter.post('/register', validate(signupRules), createUser); // Alias for signup
+publicRouter.post('/login', validate(loginRules), loginUser);
+
+// Private routes - authentication required
+privateRouter.post('/refresh-token', validate(refreshTokenRules), refreshToken);
+privateRouter.post('/logout', validate(logoutRules), logoutUser);
+
+module.exports = {
+  publicAuthRoutes: publicRouter,
+  privateAuthRoutes: privateRouter
+};

@@ -1,108 +1,120 @@
 const { Post, Like } = require('../models');
+const mongoose = require('mongoose');
+const { getPaginationOptions, getPaginationMetadata } = require('../utils/pagination');
+const { asyncHandler } = require('../middlewares/errorMiddleware');
+const { BadRequestError, NotFoundError, ConflictError } = require('../utils/customErrors');
 
-const getLikesByPostId = async (req, res) => {
+/**
+ * Get likes for a specific post
+ * @route GET /api/posts/:post_id/likes
+ */
+const getLikes = asyncHandler(async (req, res) => {
     const { post_id } = req.params;
+    const { page, limit, skip } = getPaginationOptions(req.query);
 
-    try {
-        const post = await Post.findByPk(post_id, {
-            include: {
-                model: Like,
-                attributes: ['user_id']
-            },
-        });
-
-        if (!post) {
-            return res.status(404).json({
-                success: false,
-                message: 'Post not found',
-                timestamp: new Date().toISOString()
-            });
-        }
-
-        res.status(200).json({
-            success: true,
-            message: `Successfully retrieved ${post.Likes.length} like(s) for post ID ${post_id}`,
-            timestamp: new Date().toISOString(),
-            data: post.Likes,
-        });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({
-            success: false,
-            message: "An unexpected error occurred. Please try again later.",
-            timestamp: new Date().toISOString()
-        });
+    // Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(post_id)) {
+        throw new BadRequestError("Invalid post ID format");
     }
-};
 
-const likePost = async (req, res) => {
-    const { post_id, user_id } = req.body;
-
-    try {
-        const existingLike = await Like.findOne({ where: { post_id, user_id } });
-
-        if (existingLike) {
-            return res.status(409).json({
-                success: false,
-                message: "User already liked this post",
-                timestamp: new Date().toISOString()
-            });
-        }
-
-        const newLike = await Like.create({ post_id, user_id });
-
-        res.status(201).json({
-            success: true,
-            message: "Post successfully liked",
-            timestamp: new Date().toISOString(),
-            data: {
-                id: newLike.id,
-                post_id: newLike.post_id,
-                user_id: newLike.user_id,
-                createdAt: newLike.createdAt
-            }
-        });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({
-            success: false,
-            message: "An unexpected error occurred. Please try again later.",
-            timestamp: new Date().toISOString()
-        });
+    // Check if post exists
+    const post = await Post.findById(post_id);
+    if (!post) {
+        throw new NotFoundError("Post not found");
     }
-};
 
-const unlikePost = async (req, res) => {
-    const { post_id, user_id } = req.body;
+    // Get total count for pagination
+    const totalLikes = await Like.countDocuments({ post: post_id });
 
-    try {
-        const result = await Like.destroy({ where: { post_id, user_id } });
+    // Get paginated likes
+    const likes = await Like.find({ post: post_id })
+        .populate('user', 'username')
+        .sort({ created_at: -1 })
+        .skip(skip)
+        .limit(limit);
 
-        if (result) {
-            res.status(200).json({
-                success: true,
-                message: "Post successfully unliked",
-                timestamp: new Date().toISOString(),
-                data: {
-                    post_id,
-                    user_id
-                }
-            });
-        } else {
-            res.status(404).json({
-                success: false,
-                message: "Like not found",
-                timestamp: new Date().toISOString()
-            });
-        }
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({
-            success: false,
-            message: "An unexpected error occurred. Please try again later.",
-            timestamp: new Date().toISOString()
-        });
+    res.status(200).json({
+        success: true,
+        message: `Successfully retrieved ${likes.length} like(s) for post ID ${post_id}`,
+        timestamp: new Date().toISOString(),
+        data: likes,
+        pagination: getPaginationMetadata(totalLikes, page, limit)
+    });
+});
+
+/**
+ * Like a post
+ * @route POST /api/posts/:post_id/likes
+ */
+const createLike = asyncHandler(async (req, res) => {
+    const { post_id } = req.params;
+    const user_id = req.user._id;
+
+    // Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(post_id)) {
+        throw new BadRequestError("Invalid post ID format");
     }
-};
 
-module.exports = { likePost, unlikePost, getLikesByPostId };
+    // Check if post exists
+    const post = await Post.findById(post_id);
+    if (!post) {
+        throw new NotFoundError("Post not found");
+    }
+
+    // Check if like already exists
+    const existingLike = await Like.findOne({ post: post_id, user: user_id });
+    if (existingLike) {
+        throw new ConflictError("You have already liked this post");
+    }
+
+    // Create new like
+    const newLike = new Like({
+        post: post_id,
+        user: user_id
+    });
+
+    await newLike.save();
+
+    res.status(201).json({
+        success: true,
+        message: "Post liked successfully",
+        timestamp: new Date().toISOString(),
+        data: newLike
+    });
+});
+
+/**
+ * Unlike a post
+ * @route DELETE /api/posts/:post_id/likes
+ */
+const deleteLike = asyncHandler(async (req, res) => {
+    const { post_id } = req.params;
+    const user_id = req.user._id;
+
+    // Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(post_id)) {
+        throw new BadRequestError("Invalid post ID format");
+    }
+
+    // Check if post exists
+    const post = await Post.findById(post_id);
+    if (!post) {
+        throw new NotFoundError("Post not found");
+    }
+
+    // Find and delete the like
+    const like = await Like.findOneAndDelete({ post: post_id, user: user_id });
+
+    if (!like) {
+        throw new NotFoundError("Like not found. You haven't liked this post.");
+    }
+
+    res.status(200).json({
+        success: true,
+        message: "Post unliked successfully",
+        timestamp: new Date().toISOString(),
+        data: { _id: like._id }
+    });
+});
+
+module.exports = { createLike, deleteLike, getLikes };

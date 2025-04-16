@@ -1,22 +1,23 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
+const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
 
-const RefreshToken = sequelize.define('RefreshToken', {
+const RefreshTokenSchema = new Schema({
     token: {
-        type: DataTypes.TEXT,
-        allowNull: false,
+        type: String,
+        required: true
     },
-    userId: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        references: {
-            model: 'users',
-            key: 'id'
-        }
+    user: {
+        type: Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
     }
 }, {
-    tableName: 'refresh_tokens',
     timestamps: true
 });
 
-module.exports = RefreshToken;
+// Create indexes for frequently queried fields
+RefreshTokenSchema.index({ token: 1 }); // For token lookups during refresh
+RefreshTokenSchema.index({ user: 1 }); // For finding tokens by user
+RefreshTokenSchema.index({ createdAt: 1 }); // For token expiration cleanup
+
+module.exports = mongoose.model('RefreshToken', RefreshTokenSchema);

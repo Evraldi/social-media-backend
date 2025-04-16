@@ -1,31 +1,39 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
+const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
 
-const Notification = sequelize.define('Notification', {
-    id: {
-        type: DataTypes.INTEGER,
-        autoIncrement: true,
-        primaryKey: true
+const NotificationSchema = new Schema({
+    user: {
+        type: Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
     },
-    user_id: {
-        type: DataTypes.INTEGER,
-        allowNull: false
+    sender: {
+        type: Schema.Types.ObjectId,
+        ref: 'User'
+    },
+    type: {
+        type: String,
+        enum: ['follow', 'like', 'comment', 'message', 'friend_request', 'system'],
+        required: true
     },
     content: {
-        type: DataTypes.STRING,
-        allowNull: false
+        type: String,
+        required: true
     },
     read: {
-        type: DataTypes.BOOLEAN,
-        defaultValue: false
+        type: Boolean,
+        default: false
     },
     created_at: {
-        type: DataTypes.DATE,
-        defaultValue: DataTypes.NOW
+        type: Date,
+        default: Date.now
     }
-}, {
-    timestamps: false,
-    tableName: 'notifications'
 });
 
-module.exports = Notification;
+// Create indexes for frequently queried fields
+NotificationSchema.index({ user: 1, read: 1 }); // For finding unread notifications for a user
+NotificationSchema.index({ user: 1, type: 1 }); // For filtering notifications by type
+NotificationSchema.index({ user: 1, created_at: -1 }); // For sorting notifications by date
+NotificationSchema.index({ sender: 1 }); // For finding notifications from a specific sender
+
+module.exports = mongoose.model('Notification', NotificationSchema);

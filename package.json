@@ -4,22 +4,53 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node app.js",
+    "dev": "nodemon app.js",
+    "test": "jest --runInBand",
+    "test:watch": "jest --watch --runInBand",
+    "test:coverage": "jest --coverage --runInBand",
+    "test:auth": "node test-single.js auth.test.js",
+    "test:user": "node test-single.js user-routes.test.js",
+    "test:post": "node test-single.js post.test.js",
+    "test:comment": "node test-single.js comment.test.js",
+    "test:like": "node test-single.js like.test.js",
+    "test:friendship": "node test-single.js friendship.test.js",
+    "test:all": "node run-all-tests.js",
+    "test:single": "node test-single.js",
+    "test:unit": "jest tests/unit",
+    "test:integration": "jest tests/integration",
+    "test:performance": "jest tests/performance",
+    "test:manual": "node tests/manual/test-performance.js",
+    "test:load": "artillery run tests/load/load-test.yml",
+    "test:load:setup": "node tests/load/setup.js",
+    "test:load:run": "node tests/load/run-load-tests.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "bcrypt": "^5.1.1",
+    "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "express-validator": "^7.1.0",
     "fs": "^0.0.1-security",
     "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.13.2",
     "multer": "^1.4.5-lts.1",
-    "mysql2": "^3.11.0",
     "path": "^0.12.7",
-    "sequelize": "^6.37.3"
+    "redis": "^4.7.0",
+    "xss": "^1.0.15"
+  },
+  "devDependencies": {
+    "artillery": "^2.0.0-38",
+    "axios": "^1.6.7",
+    "chai": "^4.5.0",
+    "jest": "^29.7.0",
+    "mongodb-memory-server": "^10.1.4",
+    "nodemon": "^3.1.0",
+    "sinon": "^17.0.1",
+    "supertest": "^7.1.0"
   }
 }
